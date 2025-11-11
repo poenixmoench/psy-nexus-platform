@@ -1,0 +1,16 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgres://psyuser:pass@host.docker.internal:5432/psy_nexus
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: test-secret
+      PORT: 5000

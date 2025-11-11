@@ -1,0 +1,21 @@
+{
+  "name": "psy-nexus-backend",
+  "version": "1.0.0",
+  "description": "Psy-Nexus Event Platform Backend",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-validator": "^7.0.0",
+    "express-async-handler": "^1.2.0",
+    "pg": "^8.10.0",
+    "redis": "^4.6.7",
+    "jsonwebtoken": "^9.0.2",
+    "bcrypt": "^5.1.0",
+    "helmet": "^7.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  }
+}
