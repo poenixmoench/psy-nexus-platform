@@ -1,58 +1,68 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
-router.get('/', async (req, res) => {
+const Event = require('../models/Event');
+const authenticateJWT = require('../middleware/auth');
+
+// Get Events (Chronological: LIVE → FUTURE → PAST)
+router.get('/events', authenticateJWT, async (req, res) => {
   try {
-    const { rows } = await db.query('SELECT * FROM events ORDER BY date DESC');
-    res.json(rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to fetch events' });
+    const events = await Event.find().sort({ date: 1 }); // Assuming date is stored as DATE
+    const now = new Date();
+
+    const sortedEvents = events.map(event => {
+      const eventDate = new Date(event.date);
+      let status = 'past';
+      if (eventDate >= now) status = 'future';
+      if (eventDate.toDateString() === now.toDateString()) status = 'live';
+      return { ...event._doc, status };
+    });
+
+    // Sort by status: live -> future -> past
+    sortedEvents.sort((a, b) => {
+      const order = { live: 0, future: 1, past: 2 };
+      return order[a.status] - order[b.status];
+    });
+
+    res.status(200).json(sortedEvents);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
   }
 });
-router.get('/:id', async (req, res) => {
+
+// Create Event
+router.post('/events', authenticateJWT, async (req, res) => {
   try {
-    const { rows } = await db.query('SELECT * FROM events WHERE id = $1', [req.params.id]);
-    if (rows.length === 0) return res.status(404).json({ error: 'Event not found' });
-    res.json(rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: 'Database error' });
+    const { title, date, location, genre, price } = req.body;
+    const event = new Event({
+      title,
+      date,
+      location,
+      genre,
+      price,
+      organizer_id: req.user.id,
+    });
+    await event.save();
+    res.status(201).json(event);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
   }
 });
-router.post('/', async (req, res) => {
-  const { title, description, location, date, time } = req.body;
-  if (!title || !date) return res.status(400).json({ error: 'Title and date required' });
+
+// Delete Event
+router.delete('/events/:id', authenticateJWT, async (req, res) => {
   try {
-    const { rows } = await db.query(
-      'INSERT INTO events (title, description, location, date, time) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [title, description, location, date, time]
-    );
-    res.status(201).json(rows[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to create event' });
+    const event = await Event.findById(req.params.id);
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+
+    if (event.organizer_id.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    await event.remove();
+    res.status(200).json({ message: 'Event deleted' });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
   }
 });
-router.put('/:id', async (req, res) => {
-  const { title, description, location, date, time } = req.body;
-  try {
-    const { rows } = await db.query(
-      'UPDATE events SET title=$1, description=$2, location=$3, date=$4, time=$5, updated_at=CURRENT_TIMESTAMP WHERE id=$6 RETURNING *',
-      [title, description, location, date, time, req.params.id]
-    );
-    if (rows.length === 0) return res.status(404).json({ error: 'Event not found' });
-    res.json(rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to update event' });
-  }
-});
-router.delete('/:id', async (req, res) => {
-  try {
-    const { rows } = await db.query('DELETE FROM events WHERE id = $1 RETURNING *', [req.params.id]);
-    if (rows.length === 0) return res.status(404).json({ error: 'Event not found' });
-    res.json({ message: 'Event deleted', event: rows[0] });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to delete event' });
-  }
-});
+
 module.exports = router;
