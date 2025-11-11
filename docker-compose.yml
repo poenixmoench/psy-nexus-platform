@@ -99,8 +99,8 @@ services:
       - app-network
 
 volumes:
-  psy-nexus-db-data:
-  psy-nexus-redis-data:
+  psy-nexus-db-
+  psy-nexus-redis-
 
 networks:
   app-network:
