@@ -4,11 +4,9 @@ services:
     build: .
     ports:
       - "5000:5000"
+    env_file:
+      - .env
     environment:
-      - POSTGRES_HOST=postgres
-      - POSTGRES_DB=psynexus
-      - POSTGRES_USER=psynexus
-      - POSTGRES_PASSWORD=changeme_secure_password_here
       - NODE_ENV=production
     depends_on:
       - postgres
@@ -16,22 +14,45 @@ services:
     volumes:
       - ./src:/app/src
     restart: unless-stopped
+    networks:
+      - psynexus-network
+
   postgres:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_DB=psynexus
-      - POSTGRES_USER=psynexus
-      - POSTGRES_PASSWORD=changeme_secure_password_here
+      POSTGRES_DB: psy_nexus
+      POSTGRES_USER: psyuser
+      POSTGRES_PASSWORD: changeme_secure_password_here
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./src/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
     ports:
       - "5432:5432"
     restart: unless-stopped
+    networks:
+      - psynexus-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U psyuser -d psy_nexus"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
     restart: unless-stopped
+    networks:
+      - psynexus-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "PING"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
+
+networks:
+  psynexus-network:
+    driver: bridge

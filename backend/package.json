@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Psy-Nexus Event Manager Backend",
   "main": "src/index.js",
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
     "dev": "node src/index.js",
     "start": "node src/index.js"
