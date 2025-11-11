@@ -1,115 +1,107 @@
 version: '3.8'
-
 services:
-  db:
-    image: postgres:15-alpine
+  frontend:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: psy-nexus-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
+      - VITE_API_URL=http://backend:5000
     networks:
-      - psy-nexus-internal
-  redis:
-    image: redis:alpine
-    volumes:
-      - redisdata:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-    networks:
-      - psy-nexus-internal
+      - app-network
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      DB_NAME: ${POSTGRES_DB}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      PORT: 3000
-      JWT_SECRET: ${JWT_SECRET}
-      SESSION_SECRET: ${SESSION_SECRET}
+    container_name: psy-nexus-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-    volumes:
-      - ./backend:/app
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://psyuser:password@postgres:5432/psy_nexus
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-prod
+      - SESSION_SECRET=your-super-secret-session-key-change-in-prod
+      - ALLOWED_ORIGINS=http://localhost:3000,http://frontend:3000
     networks:
-      - psy-nexus-internal
+      - app-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: psy-nexus-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: psy_nexus
+      POSTGRES_USER: psyuser
+      POSTGRES_PASSWORD: password
+    volumes:
+      - psy-nexus-db-data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432" # Nur für Debugging, in Produktion entfernen
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U psyuser -d psy_nexus"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: psy-nexus-redis
+    restart: unless-stopped
+    volumes:
+      - psy-nexus-redis-data:/data
+    ports:
+      - "6379:6379" # Nur für Debugging, in Produktion entfernen
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - app-network
+
   nginx:
     image: nginx:alpine
+    container_name: psy-nexus-nginx
+    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/conf:/etc/nginx/conf.d
-      - ./nginx/certs:/etc/nginx/certs
-      - ./backend:/app
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./infrastructure/nginx/ssl.conf:/etc/nginx/conf.d/ssl.conf
+      - ./infrastructure/nginx/security.conf:/etc/nginx/conf.d/security.conf
+      - ./infrastructure/nginx/gzip.conf:/etc/nginx/conf.d/gzip.conf
+      # Stelle sicher, dass der Pfad zu deinen statischen Frontend-Dateien korrekt ist, wenn du sie direkt bereitstellst
+      # - ./apps/web/dist:/usr/share/nginx/html
     depends_on:
-      backend:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
+      - frontend
+      - backend
     networks:
-      - psy-nexus-internal
-      - psy-nexus-external
-networks:
-  psy-nexus-internal:
-    driver: bridge
-  psy-nexus-external:
-    driver: bridge
+      - app-network
+
 volumes:
-  pgdata:
-  redisdata:
-EOF && cat > .env.example << 'EOF'
-POSTGRES_USER=psy_nexus_user
-POSTGRES_PASSWORD=secure_db_password_123!
-POSTGRES_DB=psy_nexus_db
-JWT_SECRET=your_jwt_secret_here
-SESSION_SECRET=your_session_secret_here
-EOF && cat > nginx/conf/default.conf << 'EOF'
-server {
-    listen 80;
-    server_name chat.psy-nexus.live;
-    return 301 https://$host$request_uri;
-}
+  psy-nexus-db-data:
+  psy-nexus-redis-data:
 
-server {
-    listen 443 ssl;
-    server_name chat.psy-nexus.live;
-
-    ssl_certificate /etc/nginx/certs/fullchain.pem;
-    ssl_certificate_key /etc/nginx/certs/privkey.pem;
-
-    location / {
-        proxy_pass http://backend:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-EOF && docker compose up -d
+networks:
+  app-network:
+    driver: bridge

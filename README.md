@@ -1,14 +1,24 @@
-# PSY-NEXUS Event Platform
+# Psy-NEXUS Event Manager
 
-Next-Generation Psytrance & Goa Event Discovery Platform
+Ein Open-Source-Event-Management-System für die Psytrance-Community, erstellt mit Vue.js 3, Express.js, PostgreSQL und Docker.
 
-## Tech Stack
+## Features
 
-- Frontend: Vue.js 3 (PWA)
-- Backend: Node.js/Express
-- Database: PostgreSQL
-- Container: Docker
-- CI/CD: GitHub Actions
+- Veranstaltungen erstellen, anzeigen und filtern
+- Benutzerauthentifizierung (Registrierung, Login)
+- Chronologische Sortierung (LIVE → FUTURE → PAST)
+- Responsive Webdesign
+- Community-Moderation (geplant)
 
-## Development
+## Technologie-Stack
 
+- **Frontend:** Vue.js 3, Vite, TypeScript, Pinia
+- **Backend:** Node.js, Express.js, TypeScript
+- **Datenbank:** PostgreSQL 15
+- **Cache:** Redis
+- **Container:** Docker, Docker Compose
+- **Webserver:** Nginx
+
+## Lizenz
+
+BSD 3-Clause

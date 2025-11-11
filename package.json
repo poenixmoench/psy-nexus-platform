@@ -1,13 +1,21 @@
 {
   "name": "psy-nexus-platform",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Psy-NEXUS Event Manager Monorepo",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "echo 'Use specific app scripts like npm run dev --prefix apps/web'",
+    "build": "echo 'Use specific app scripts like npm run build --prefix apps/web'",
+    "test": "echo 'Use specific test scripts in each app'"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.20.0"
+  "keywords": [
+    "events",
+    "psytrance",
+    "platform",
+    "vue",
+    "express",
+    "postgresql"
+  ],
+  "author": "ZO Psy-Nexus Dev Agent",
+  "license": "BSD-3-Clause"
 }
