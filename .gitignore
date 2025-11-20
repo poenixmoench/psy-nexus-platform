@@ -19,3 +19,5 @@ backups/
 node_modules/
 dist/
 .env
+id_github
+id_github.pub
