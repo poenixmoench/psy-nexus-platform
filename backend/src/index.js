@@ -1,46 +1,22 @@
-const express = require("express");
-const { Pool } = require("pg");
-const redis = require("redis");
-require("dotenv").config();
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+require('dotenv').config();
 
 const app = express();
-const port = process.env.API_PORT || 5000;
+const PORT = process.env.PORT || 5000;
 
-app.use(express.json());
+// Middleware
+app.use(helmet()); // Sicherheits-Header
+app.use(cors()); // Cross-Origin Resource Sharing erlauben
+app.use(express.json()); // JSON-Body parsen
 
-// PostgreSQL-Verbindung
-const pgPool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+// Einfacher Test-Endpoint
+app.get('/', (req, res) => {
+  res.send('Psy-Nexus Backend läuft! (Version 0.0.1 - Hello World)');
 });
 
-// Redis-Verbindung
-const redisClient = redis.createClient({
-  url: process.env.REDIS_URL,
+// Starte den Server
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Psy-Nexus Backend server läuft auf Port ${PORT}`);
 });
-redisClient.connect();
-
-// Health-Check
-app.get("/health", async (req, res) => {
-  try {
-    await pgPool.query("SELECT 1");
-    const redisPing = await redisClient.ping();
-    res.json({ status: "healthy", db: true, redis: redisPing === "PONG" });
-  } catch (error) {
-    res.status(503).json({ status: "unhealthy", error: error.message });
-  }
-});
-
-// Beispiel-Route (kann später ersetzt werden)
-app.get("/api/events", async (req, res) => {
-  try {
-    const result = await pgPool.query("SELECT * FROM events ORDER BY created_at DESC");
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.listen(port, "0.0.0.0", () => {
-  console.log(`Server läuft auf Port ${port}`);
-});
-

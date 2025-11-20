@@ -1,21 +1,14 @@
 {
-  "name": "psy-nexus-platform",
+  "name": "psy-nexus-platform-root",
   "version": "1.0.0",
-  "description": "Psy-NEXUS Event Manager Monorepo",
-  "private": true,
+  "description": "Monorepo for Psy Nexus Platform",
   "scripts": {
-    "dev": "echo 'Use specific app scripts like npm run dev --prefix apps/web'",
-    "build": "echo 'Use specific app scripts like npm run build --prefix apps/web'",
-    "test": "echo 'Use specific test scripts in each app'"
+    "start:dev": "docker-compose -f infrastructure/docker/docker-compose.yml up --build --force-recreate -d",
+    "stop": "docker-compose -f infrastructure/docker/docker-compose.yml down",
+    "build:backend": "docker-compose -f infrastructure/docker/docker-compose.yml build backend",
+    "build:frontend": "docker-compose -f infrastructure/docker/docker-compose.yml build frontend"
   },
-  "keywords": [
-    "events",
-    "psytrance",
-    "platform",
-    "vue",
-    "express",
-    "postgresql"
-  ],
-  "author": "ZO Psy-Nexus Dev Agent",
-  "license": "BSD-3-Clause"
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }

@@ -1,0 +1,33 @@
+import express, { Request, Response } from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+
+// NEUE Imports für DB Setup und Routen
+import { setupEventTable } from './db/eventQueries'; // Angenommen diese Datei existiert bereits
+import { setupUserTable } from './db/userQueries'; 
+import { authRoutes } from './routes/authRoutes';
+import { eventRoutes } from './routes/eventRoutes';
+import { pool } from './db/dbConfig'; // Angenommen dbConfig exportiert den Pool
+
+
+dotenv.config();
+
+const app = express();
+
+// CORS und Body-Parsing Middleware
+app.use(cors());
+app.use(express.json());
+
+// Führe das Setup beider Tabellen einmalig nach dem Start aus (Wichtig!)
+// Dadurch wird die 'users'-Tabelle beim ersten Start erstellt.
+setupEventTable(pool); // Wir gehen davon aus, dass eventQueries eine solche Funktion exportiert
+setupUserTable(pool); 
+
+// Routen
+app.use('/auth', authRoutes);
+app.use('/events', eventRoutes);
+
+const PORT = process.env.PORT || 3000;
+app.listen(Number(PORT), () => {
+    console.log(`Server is running on port ${PORT}`);
+});
