@@ -1,9 +1,12 @@
-import { Request, Response, NextFunction } from 'express'; // Benutze Request direkt
+import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
+// Keine lokale Definition von UserPayload oder CustomRequest hier!
+// Diese sollten in express.d.ts global definiert sein.
+// import { UserPayload } from '../types/express'; // Falls du es separat importieren willst, ist das okay.
+
 // Middleware zur JWT-Authentifizierung und -Autorisierung
-// Benutzt die globale Typdefinition von 'req.user' aus src/types/express.d.ts
-export function authenticateToken(req: Request, res: Response, next: NextFunction) { // Benutze Request direkt
+export function authenticateToken(req: Request, res: Response, next: NextFunction) { // Benutze Request direkt, die Erweiterung erfolgt global
   const authHeader = req.headers['authorization'];
   // Format: Bearer <token>
   const token = authHeader && authHeader.split(' ')[1];
@@ -27,11 +30,9 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
 
     // Das 'decodedUser' enthält den Payload des Tokens (z.B. { id: ... })
     // Speichere es im Request-Objekt ab, damit nachfolgende Handler darauf zugreifen können
-    // Die Typisierung von req.user erfolgt global in express.d.ts
+    // Stellen Sie sicher, dass Ihre globale Typdefinition (z.B. express.d.ts) dies unterstützt
     // req.user ist vom Typ UserPayload (aus express.d.ts), also casten wir decodedUser entsprechend
-    // Da decodedUser vom JWT generisch ist, müssen wir sicherstellen, dass es der Struktur von UserPayload entspricht.
-    // Hier gehen wir davon aus, dass das Token { id, email, username } enthält.
-    req.user = decodedUser as UserPayload; // <-- Verwendet die globale Typdefinition
+    req.user = decodedUser as UserPayload; // <-- Dieser Typ 'UserPayload' wird aus der globalen Deklaration erwartet
     next(); // Gehe zur nächsten Middleware/Route
   });
 }

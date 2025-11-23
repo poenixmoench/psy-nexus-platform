@@ -1,0 +1,73 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║ 🚀 PSY-NEXUS MVP - OPTIMIERTE ROADMAP V4.0 (VEREINIGT & ZENTRAL) - UPDATE 23.11.2025 ║
+║                                                                              ║
+║ Der *einzige* Plan für deine Entwicklung (Exklusiv: Schweizer GOA)          ║
+║ Production-Ready Build Plan mit Puffer & Qwen-Optimierung                   ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+## 📊 AKTUELLER STAND (23.11.2025 - 00:15 UTC):
+| Komponente              | Status             | Rolle/Rolle im System                                     |
+| :-                      | :-                 | :-                                                        |
+| Backend MVP             | ✅ Abgeschlossen    | Vollständige Authentifizierung, Events-CRUD, Validierung  |
+| Frontend - Woche 1 (M2.1) | ✅ Abgeschlossen    | Vue Router, grundlegende Views, Kachel-Layout (HomeView) |
+| Frontend - Woche 2 (M2.2 & M2.3) | 🔄 In Arbeit | Authentifizierung (Login/Register), Event-Ansicht         |
+| Frontend - Woche 3 (M2.4) | ⏳ Geplant         | Event-Erstellung/Bearbeitung/Löschung                     |
+| Frontend - Woche 4 (M4.1 & M4.2) | ⏳ Geplant   | Design (Dark Mode), 3D-Integration                        |
+
+## 🗓️ OPTIMIERTE 4-WOCHEN-ROADMAP (Deployment-Ready - basierend auf Master-Manuskript V5.3)
+
+### **WOCHE 1: SKELETT-AUFBAU (M2.1 - Abgeschlossen)**
+- **Fokus:** Funktionale Basis und Router-Gerüst.
+- **Design-Constraint:** Nur Schwarz, Weiß und Grau (keine Farben).
+- **Ergebnis:** Portal-Dashboard (`/`) mit Kacheln (Nexus-Herz, Nexus-Generator, Community, Chat, Manifest, Track Player) ist im Browser sichtbar und klickbar.
+
+### **WOCHE 2: FUNKTION (M2.2 & M2.3 - In Arbeit)**
+- **Fokus:** Datenfluss zwischen Frontend und Backend.
+- **M2.2: Frontend-Authentifizierung (Login/Register):**
+    - **Status:** 🔄 In Arbeit (Code generiert via Qwen)
+    - **Ziel:** Implementierung der Login- und Registrierungsformulare in der Vue/React-App, die mit der Backend-API kommunizieren.
+    - **Files zu erstellen/anpassen:**
+        - `apps/web/src/plugins/axios.ts` (Zentrale Axios-Instanz mit Interceptor)
+        - `apps/web/src/types/index.ts` (TypeScript-Typen)
+        - `apps/web/src/stores/authStore.ts` (Pinia-Store für Auth)
+        - `apps/web/src/views/LoginView.vue` (Erweitert um Formularlogik)
+        - `apps/web/src/views/RegisterView.vue` (Erweitert um Formularlogik)
+- **M2.3: Frontend-Event-Ansicht:**
+    - **Status:** 🔄 In Arbeit (Code generiert via Qwen)
+    - **Ziel:** Anzeigen der Events aus der Backend-API im Frontend unter Berücksichtigung der "Autonomen Chronologie" und "LÄUFT GERADE"-Logik.
+    - **Files zu erstellen/anpassen:**
+        - `apps/web/src/views/EventsView.vue` (Erweitert um Fetch- und Anzeigelogik, Sortierung, Status-Tag)
+
+### **WOCHE 3: STABILITÄT (M2.4 - Geplant)**
+- **Fokus:** User Experience und Bugfixing.
+- **M2.4: Frontend-Event-Erstellung/Bearbeitung/Löschung:**
+    - **Ziel:** CRUD-Operationen für Events direkt aus dem Frontend heraus ermöglichen.
+    - **Files zu erstellen/anpassen:**
+        - `apps/web/src/views/EventsView.vue` (Erweitert um Create/Edit/Delete-Formulare/Logik)
+        - `apps/web/src/components/EventForm.vue` (Optionale wiederverwendbare Komponente für Event-Erstellung/Bearbeitung)
+
+### **WOCHE 4: DESIGN & INTEGRATION (Geplant)**
+- **Fokus:** Visueller Auftritt und Feinschliff.
+- **M4.1: Visuelles Design (Dark Mode):**
+    - **Ziel:** Implementierung des "Deep Space Dark Mode" (Dunkelblau/Schwarz mit Neon-Akzenten).
+    - **Files zu bearbeiten:** CSS-Dateien, Farbvariablen.
+- **M4.2: 3D-Integration (z.B. Rotierendes Logo):**
+    - **Ziel:** Platzhalter-Kacheln werden mit ersten **3D-Objekten** gefüllt.
+    - **Files zu erstellen/anpassen:** 3D-Renderer-Komponente, Modelle.
+
+## 🔁 ENTWICKLUNGSZYKLUS FÜR JEDES FEATURE:
+1. **Planung:** Definiere den genauen Scope (was soll das Feature können?).
+2. **Qwen-Generierung:** Nutze einen gezielten Prompt (wie im Beispiel für M2.1), um den Grundgerüst-Code zu generieren.
+3. **Integration:** Füge den generierten Code in das Projekt ein.
+4. **Testen:** Starte den Frontend-Container neu (`docker-compose up -d frontend`) und teste die Funktion im Browser.
+5. **Iterieren:** Passe den generierten Code an, bis er korrekt funktioniert und den Anforderungen entspricht.
+
+## 💡 HINWEISE:
+- Nutze die Ollama-Instanz (`ollama run qwen2.5-coder:14b`) für gezielte Code-Generierung.
+- Achte auf korrekte TypeScript-Typisierung und Fehlerbehandlung.
+- Verwende die `console.log` oder den Browser-Debugger für die Fehlersuche.
+- Die API-Dokumentation ist in der `README.md` oder direkt im Code (`src/routes/...`) zu finden.
+- Die `.env`-Datei im Root-Verzeichnis enthält die notwendigen Konfigurationsparameter für Backend und DB.
+

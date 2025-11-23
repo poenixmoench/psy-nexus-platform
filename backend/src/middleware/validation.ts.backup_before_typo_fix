@@ -1,0 +1,39 @@
+import { Request, Response, NextFunction } from 'express';
+import { AnyZodObject } from 'zod';
+
+// Generische Middleware-Funktion für Zod-Validierung
+export const validate = (schema: AnyZodObject) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // Versuche, den Request-Body gegen das Schema zu validieren
+      const validatedData = await schema.parseAsync(req.body);
+      // Wenn erfolgreich, speichere die validierten Daten im Request-Objekt ab
+      // (Optional, je nachdem, wie du es nutzen willst)
+      // req.validatedBody = validatedData; // Beispiel-Name
+      req.body = validatedData; // Überschreibt req.body mit den validierten/gereinigten Daten
+      next(); // Gehe zur nächsten Middleware/Route
+    } catch (error) {
+      // Wenn die Validierung fehlschlägt, ist 'error' wahrscheinlich ein ZodError
+      if (error instanceof Error) {
+        // Prüfe, ob es ein ZodError ist
+        if (error.name === 'ZodError') {
+          // Extrahiere die Fehlerdetails aus dem ZodError
+          // @ts-ignore - TypeScript kennt das 'issues'-Feld von ZodError nicht direkt auf 'Error'
+          const issues = error.issues; // Typisierung von ZodError.issues
+          return res.status(400).json({
+            error: 'Validation failed',
+            details: issues.map(issue => ({
+              field: issue.path.join('.'), // Der Pfad des fehlerhaften Feldes als String
+              message: issue.message,      // Die Fehlermeldung
+              value: issue.input,          // Der eingegebene Wert (optional, kann sensibel sein)
+            })),
+          });
+        }
+        // Falls es ein anderer Fehler ist
+        return res.status(500).json({ error: 'Internal Server Error during validation' });
+      }
+      // Falls 'error' kein Error-Objekt ist (ungewöhnlich, aber sicher ist sicher)
+      return res.status(500).json({ error: 'Unknown error during validation' });
+    }
+  };
+};

@@ -1,9 +1,12 @@
-import express, { Request, Response } from 'express';
+import { Router, Request, Response } from 'express';
 
-const router = express.Router();
+const router = Router();
 
+// GET /health - Einfacher Health-Check-Endpunkt
 router.get('/', (req: Request, res: Response) => {
-    res.status(200).json({ status: "ok" });
+  // Prüft grundlegende Server-Konnektivität
+  // Optional: Hier könntest du auch DB-Connectivity prüfen
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-export default router;
+export const healthRoutes = router;

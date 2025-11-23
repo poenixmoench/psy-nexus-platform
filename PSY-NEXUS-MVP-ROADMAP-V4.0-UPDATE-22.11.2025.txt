@@ -1,0 +1,119 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║ 🚀 PSY-NEXUS MVP - OPTIMIERTE ROADMAP V4.0 (VEREINIGT & ZENTRAL) - UPDATE 22.11.2025 ║
+║                                                                              ║
+║ Der *einzige* Plan für deine Entwicklung (Exklusiv: Schweizer GOA)           ║
+║ Production-Ready Build Plan mit Puffer & Qwen-Optimierung                    ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+## 📊 AKTUELLER STAND (22.11.2025 - 10:45 UTC):
+
+| Komponente                 | Status         | Rolle/Rolle im System                                                    |
+| :------------------------- | :------------- | :----------------------------------------------------------------------- |
+| **Docker Compose Setup**   | ✅ Abgeschlossen   | Stellt DB, Backend, Frontend als Container bereit                        |
+| **Backend Build Pipeline** | ✅ Abgeschlossen   | TypeScript-Code wird erfolgreich kompiliert und in Docker-Image gebaut   |
+| **Backend Start**          | ✅ Abgeschlossen   | Backend-Container startet und läuft stabil                                |
+| **Datenbankverbindung**    | ✅ Abgeschlossen   | Backend verbindet sich erfolgreich mit PostgreSQL                         |
+| **Datenbankinitialisierung** | ✅ Abgeschlossen   | Tabellen `users` und `events` werden beim Start erstellt                  |
+| **CRUD API (Events)**      | ✅ Abgeschlossen   | POST, GET, PUT, DELETE für Events funktionieren                          |
+| **Authentifizierung (JWT)**| ✅ Abgeschlossen   | Register/Login-Endpunkte erstellt, Token-Generierung funktioniert         |
+| **Autorisierung (JWT MW)** | ✅ Abgeschlossen   | Middleware `authenticateToken` geschützt Endpunkte                        |
+| **Eingabevalidierung (Zod)**| ✅ Abgeschlossen  | Middleware `validate` schützt Endpunkte vor ungültigen Eingaben           |
+| **API-Verfügbarkeit**      | ✅ Abgeschlossen   | API ist über Port 3001 erreichbar (nach Freischaltung der Firewall)       |
+| **Frontend (Nginx)**       | ✅ Abgeschlossen   | Frontend läuft über Nginx-Container, Port 80 erreichbar                    |
+| **Ollama-Server**          | ✅ Abgeschlossen   | Läuft als Systemdienst, bereit für KI-Unterstützung                       |
+
+## 🎯 NÄCHSTE MEILENSTEINE (M2.x)
+
+### M2.1: Frontend-Grundgerüst (Geplant: Tag 1-2)
+**Ziel:** Erstelle die grundlegende Vue.js/TypeScript-Struktur mit Vue Router und Axios.
+**Files zu erstellen/anpassen:**
+- `apps/web/src/main.ts` (Initialisierung der Vue-App mit Router)
+- `apps/web/src/router/index.ts` (Definition der Routen: `/`, `/login`, `/register`, `/events`)
+- `apps/web/src/plugins/axios.ts` (Axios-Instanz mit Basis-URL und Interceptors für JWT)
+- `apps/web/src/components/layout/AppHeader.vue` (Optionaler Header)
+- `apps/web/src/components/layout/AppFooter.vue` (Optionaler Footer)
+- `apps/web/src/views/HomeView.vue` (Startseite)
+- `apps/web/src/views/LoginView.vue` (Login-Formular)
+- `apps/web/src/views/RegisterView.vue` (Registrierungs-Formular)
+- `apps/web/src/views/EventsView.vue` (Anzeige der Events)
+
+**Qwen Prompt (Beispiel):**
+ROLE: Du bist ein erfahrener Vue.js/TypeScript-Entwickler.
+AUFGABE: Erstelle die grundlegenden Vue-Komponenten und das Routing für das Psy-Nexus Frontend basierend auf der vorgegebenen Struktur.
+SYSTEMKONTEXTE:
+
+Projektname: Psy-Nexus
+Frontend-Technologie: Vue.js 3, TypeScript, Vite
+Routing: Vue Router
+API-URL: http://localhost:3001 (für Entwicklung) oder http://157.180.31.27:3001 oder https://psy-nexus.live/api (angepasst für Produktion)
+Zustand: Backend-API ist bereit und erwartet JWT im Authorization-Header.
+Wichtig: Keine Änderungen an der Docker- oder Netzwerkkonfiguration erforderlich. Fokus liegt auf dem Frontend-Code.
+AKTUELLE DATEISTRUKTUR (relevant für Frontend):
+/root/psy-nexus-platform/
+├── apps/
+│ └── web/
+│ ├── src/
+│ │ ├── components/
+│ │ │ └── (leer oder vorhanden)
+│ │ ├── views/
+│ │ │ └── (leer oder vorhanden)
+│ │ ├── router/
+│ │ │ └── (leer oder vorhanden)
+│ │ ├── plugins/
+│ │ │ └── (leer oder vorhanden)
+│ │ ├── main.ts
+│ │ ├── App.vue
+│ │ └── (andere Dateien...)
+│ ├── package*.json
+│ └── (vite.config.ts, index.html, etc.)
+AUFGABENSTELLUNG:
+
+Vue Router Setup (src/router/index.ts): Erstelle eine Datei, die Vue Router initialisiert und die Routen /, /login, /register, /events definiert, wobei jede Route auf eine entsprechende View-Komponente verweist.
+Axios Plugin (src/plugins/axios.ts): Erstelle eine Datei, die eine Axios-Instanz mit der korrekten Basis-URL (http://localhost:3001) konfiguriert. Füge Interceptors hinzu, um bei jeder Anfrage das JWT-Token (aus localStorage oder sessionStorage) im Authorization-Header zu senden (Bearer ${token}).
+Grundlegende Views (src/views/*.vue): Erstelle leere oder einfach gestaltete .vue-Dateien für HomeView, LoginView, RegisterView, EventsView. Sie sollen z.B. eine Überschrift enthalten.
+Main.ts Anpassung: Ändere src/main.ts, um den erstellten Router zu importieren und zu verwenden. Importiere und nutze das Axios-Plugin.
+AUSGABE: Bitte generiere den vollständigen, lauffähigen TypeScript/Vue-Code für die folgenden Dateien:
+src/router/index.ts
+src/plugins/axios.ts
+src/views/HomeView.vue
+src/views/LoginView.vue
+src/views/RegisterView.vue
+src/views/EventsView.vue
+Ein Update für src/main.ts (mit Router und Axios-Plugin)
+Stelle sicher, dass der Code den TypeScript-Compiler (tsc) erfolgreich durchläuft und keine Laufzeitfehler in der Browser-Konsole verursacht. Beachte die bereits bestehende Code-Struktur und Typdefinitionen.
+
+### M2.2: Frontend-Login/Registrierung (Geplant: Tag 2-3)
+**Ziel:** Implementierung der Login- und Registrierungsformulare, die mit der Backend-API kommunizieren.
+**Files zu erstellen/anpassen:**
+- `apps/web/src/services/authService.ts` (Funktionen für `register`, `login`, `logout`, Token-Management)
+- `apps/web/src/views/LoginView.vue` (Erweitert um Formularlogik)
+- `apps/web/src/views/RegisterView.vue` (Erweitert um Formularlogik)
+
+### M2.3: Frontend-Event-Ansicht (Geplant: Tag 3-4)
+**Ziel:** Anzeigen der Events aus der Backend-API im Frontend.
+**Files zu erstellen/anpassen:**
+- `apps/web/src/services/eventService.ts` (Funktionen für `getEvents`, `createEvent`, `updateEvent`, `deleteEvent`)
+- `apps/web/src/views/EventsView.vue` (Erweitert um Fetch- und Anzeigelogik)
+
+### M2.4: Frontend-Event-Erstellung/Bearbeitung/Löschung (Geplant: Tag 4-5)
+**Ziel:** CRUD-Operationen für Events direkt aus dem Frontend heraus ermöglichen.
+**Files zu erstellen/anpassen:**
+- `apps/web/src/views/EventsView.vue` (Erweitert um Create/Edit/Delete-Formulare/Logik)
+- `apps/web/src/components/EventForm.vue` (Optionale wiederverwendbare Komponente für Event-Erstellung/Bearbeitung)
+
+## 🔁 ENTWICKLUNGSZYKLUS FÜR JEDES FEATURE:
+1.  **Planung:** Definiere den genauen Scope (was soll das Feature können?).
+2.  **Qwen-Generierung:** Nutze einen gezielten Prompt (wie im Beispiel für M2.1), um den Grundgerüst-Code zu generieren.
+3.  **Integration:** Füge den generierten Code in das Projekt ein.
+4.  **Testen:** Starte den Frontend-Container neu (`docker-compose up -d frontend`) und teste die Funktion im Browser.
+5.  **Iterieren:** Passe den generierten Code an, bis er korrekt funktioniert und den Anforderungen entspricht.
+
+## 💡 HINWEISE:
+- Nutze die Ollama-Instanz (`ollama run qwen2.5-coder:14b`) für gezielte Code-Generierung.
+- Achte auf korrekte TypeScript-Typisierung und Fehlerbehandlung.
+- Verwende die `console.log` oder den Browser-Debugger für die Fehlersuche.
+- Die API-Dokumentation ist in der `README.md` oder direkt im Code (`src/routes/...`) zu finden.
+- Die `.env`-Datei im Root-Verzeichnis enthält die notwendigen Konfigurationsparameter für Backend und DB.
+

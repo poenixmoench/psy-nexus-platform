@@ -1,0 +1,73 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║ 📊 PSY-NEXUS SYSTEM-ZUSTAND - PRODUKTIONSUMGEBUNG (AKTUALISIERT - MVP incl. M2.4 & K.IO Vorbereitung) ║
+║                                                                              ║
+║ Vollständiger Überblick über alle laufenden und beendeten Dienste           ║
+║ Stand: 20.11.2025 - 17:00 UTC                                            ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+## 🖥️ SERVER-INFO
+
+- **Hostname:** psy-nexus-production
+- **IP-Adresse:** 157.180.31.27
+- **Betriebssystem:** Ubuntu 24.04.3 LTS
+- **Kernel:** 6.8.0-87-generic
+- **Architektur:** x86_64
+
+## 🐳 DOCKER-COMPOSE STATUS (docker-compose -f infrastructure/docker/docker-compose.yml ps)
+
+| Name | Kommando | Status | Ports |
+| :--- | :--- | :--- | :--- |
+| docker-db-1 | `docker-entrypoint.sh postgres` | `Up (healthy)` | `5432/tcp` |
+| docker-backend-1 | `docker-entrypoint.sh node dist/index.js` | `Up` | `0.0.0.0:3001->3000/tcp` |
+| docker-frontend-1 | `"/docker-entrypoint.sh nginx -g 'daemon off;"` | `Up` | `0.0.0.0:80->80/tcp` |
+
+## 📦 DIENSTE IM DETAIL
+
+### 1. Datenbank (`db`)
+- **Image:** `postgres:15-alpine`
+- **Status:** `Up (healthy)`
+- **Ports:** Intern `5432`, nicht direkt nach außen gemappt.
+- **Volumes:** Nutzt `postgres_data`-Volume für persistente Speicherung.
+- **Environment:** Lädt Konfiguration aus `.env` (POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD).
+- **Gesundheitscheck:** `pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB`
+- **Statusmeldung:** "Database system is ready to accept connections"
+
+### 2. Backend (`backend`)
+- **Image:** `docker-backend` (lokal gebaut)
+- **Status:** `Up`
+- **Ports:** Extern `3001` -> Intern `3000`
+- **Environment:** Lädt Konfiguration aus `.env` (DB_HOST, DB_USER, DB_PASSWORD, DB_PORT, JWT_SECRET).
+- **Gesundheitscheck:** *Nicht explizit definiert*.
+- **Statusmeldung (aus Log):** "Server is running on port 3000", "Connected to the database.", "Users table setup complete.", "Events table setup complete.", "Attempting to connect to the database...", "Connected to the database."
+- **Funktion:** Stellt die API (Register, Login, Events CRUD) bereit. Verwendet JWT für Authentifizierung/Autorisierung. Verwendet Zod für Eingabevalidierung.
+
+### 3. Frontend (`frontend`)
+- **Image:** `docker-frontend` (lokal gebaut)
+- **Status:** `Up`
+- **Ports:** Extern `80` -> Intern `80`
+- **Gesundheitscheck:** *Nicht explizit definiert*.
+- **Statusmeldung (aus Log):** "start worker processes", "nginx/1.29.3"
+- **Funktion:** Stellt die Web-Oberfläche bereit (z.B. über Nginx). Lädt `index.html` und zugehörige Assets. Nutzt `nginx-ssl.conf` für HTTPS.
+
+## 🔐 SSL-ZERTIFIKATE
+
+- **Status:** **Aktiv** für `psy-nexus.live` und `www.psy-nexus.live`.
+- **Anbieter:** Let's Encrypt (via Certbot).
+- **Konfiguration:** In `infrastructure/docker/nginx-ssl.conf` definiert.
+- **Zertifikatspfad (im Container):** `/etc/letsencrypt/live/psy-nexus.live/`
+
+## 🤖 OLLAMA SERVER
+
+- **Status:** `Active: active (running)` (als Systemdienst).
+- **Prozess:** `/usr/local/bin/ollama serve`
+- **Port:** `127.0.0.1:11434`
+- **Modelle:** `qwen2.5-coder:14b` installiert.
+- **Funktion:** Bereit für KI-gestützte Code-Generierung und -Analyse.
+
+## 🔄 NÄCHSTER MEILENSTEIN (M2.4 & K.IO Vorbereitung)
+
+- **Ziel:** Implementierung der Event-Bearbeitung/Löschung (CRUD) und Vorbereitung der K.IO/Taxonomie-Views.
+- **Fokus:** Absicherung der Backend-Endpunkte, Erstellung der Frontend-Komponenten für CRUD-Operationen und Vorbereitung der statischen Inhalte für die Frequenz-Taxonomie.
+

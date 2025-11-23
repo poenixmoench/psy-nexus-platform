@@ -1,0 +1,98 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║ 🚀 PSY-NEXUS MONOREPO STRUKTUR - ENTERPRISE PRODUCTION V4.0 (AKTUALISIERT)   ║
+║                                                                              ║
+║ Security-First | Modular | CI/CD Ready | Scalable | DEV-READY               ║
+║ + INTEGRATION MIT AKTUELLEM ENTWICKLUNGSSTAND (22.11.2025)                   ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+## 📊 AKTUELLER STAND (22.11.2025 - 11:00 UTC):
+
+| Komponente                 | Status         | Rolle/Rolle im System                                                    |
+| :------------------------- | :------------- | :----------------------------------------------------------------------- |
+| **Monorepo-Struktur**      | ✅ Abgeschlossen | `apps/`, `backend/`, `frontend/`, `infrastructure/`, `shared/`            |
+| **Backend Build Pipeline** | ✅ Abgeschlossen | TypeScript-Code wird erfolgreich kompiliert (`tsc`) und in Docker-Image gebaut |
+| **Backend Start**          | ✅ Abgeschlossen | Backend-Container startet und läuft stabil                                |
+| **Docker Compose Setup**   | ✅ Abgeschlossen | Stellt DB, Backend, Frontend als Container bereit                        |
+| **Datenbankverbindung**    | ✅ Abgeschlossen | Backend verbindet sich erfolgreich mit PostgreSQL                         |
+| **Datenbankinitialisierung** | ✅ Abgeschlossen | Tabellen `users` und `events` werden beim Start erstellt                  |
+| **CRUD API (Events)**      | ✅ Abgeschlossen | POST, GET, PUT, DELETE für Events funktionieren                          |
+| **Authentifizierung (JWT)**| ✅ Abgeschlossen | Register/Login-Endpunkte erstellt, Token-Generierung funktioniert         |
+| **Autorisierung (JWT MW)** | ✅ Abgeschlossen | Middleware `authenticateToken` schützt Endpunkte                        |
+| **Eingabevalidierung (Zod)**| ✅ Abgeschlossen | Middleware `validate` schützt Endpunkte vor ungültigen Eingaben           |
+| **API-Verfügbarkeit**      | ✅ Abgeschlossen | API ist über Port 3001 (extern 3001) erreichbar und reagiert korrekt       |
+| **Frontend (Nginx)**       | ✅ Abgeschlossen | Frontend läuft über Nginx-Container, Port 80 erreichbar                    |
+| **SSL (Let's Encrypt)**    | ✅ Abgeschlossen | Zertifikate für `psy-nexus.live` abgerufen und konfiguriert (nginx-ssl.conf) |
+| **Ollama-Server**          | ✅ Abgeschlossen | Läuft als Systemdienst, bereit für KI-Unterstützung                       |
+
+## 🗂️ VERZEICHNISSTRUKTUR (Beispielzustand nach M1.5):
+
+psy-nexus-platform/
+├── apps/
+│ ├── backend/ # Backend-Quellcode (TypeScript)
+│ │ ├── src/
+│ │ │ ├── index.ts # Haupt-Entry-Point
+│ │ │ ├── db/
+│ │ │ │ ├── connection.ts # Datenbankverbindung (Pool)
+│ │ │ │ ├── eventQueries.ts # CRUD-Funktionen für Events
+│ │ │ │ └── userQueries.ts # CRUD-Funktionen für Benutzer
+│ │ │ ├── middleware/
+│ │ │ │ ├── auth.ts # JWT-Authentifizierungs-Middleware
+│ │ │ │ └── validation.ts # Zod-Validierungs-Middleware
+│ │ │ ├── models/ # (Optional) TypeScript-Interfaces für DB-Modelle
+│ │ │ ├── routes/
+│ │ │ │ ├── authRoutes.ts # Register/Login Endpunkte
+│ │ │ │ └── eventRoutes.ts # Event CRUD Endpunkte
+│ │ │ ├── services/ # (Optional) Business Logic Layer
+│ │ │ │ ├── eventService.ts
+│ │ │ │ └── authService.ts
+│ │ │ ├── types/ # (Optional) Globale Typ-Definitionen
+│ │ │ │ └── express.d.ts # Erweiterung für req.user
+│ │ │ └── validation/ # (Optional) Zod-Schema-Definitionen
+│ │ │ └── authSchemas.ts
+│ │ ├── package*.json
+│ │ └── tsconfig.json
+│ └── web/ # Frontend-Quellcode (z.B. React/Vue)
+│ ├── src/
+│ │ ├── main.tsx # Haupt-Entry-Point (React)
+│ │ ├── App.tsx # Hauptkomponente
+│ │ └── (weitere Frontend-Dateien)
+│ ├── package*.json
+│ ├── tsconfig.json
+│ └── vite.config.ts # (oder webpack.config.js, je nach Setup)
+├── backend/ # (Gebautes Backend-Image-Quellverzeichnis für Docker)
+│ ├── dist/ # (Kompiliertes JS aus src/)
+│ ├── node_modules/
+│ ├── Dockerfile
+│ └── (weitere Dateien)
+├── frontend/ # (Gebautes Frontend-Image-Quellverzeichnis für Docker)
+│ ├── dist/ # (Kompiliertes Bundle aus apps/web)
+│ ├── nginx.conf # (Standard-Nginx-Konfiguration oder angepasst)
+│ └── Dockerfile
+├── infrastructure/
+│ └── docker/
+│ ├── docker-compose.yml # Haupt-Docker-Compose-Datei
+│ ├── nginx-ssl.conf # SSL-konfigurierte Nginx-Datei
+│ └── (weitere Infrastruktur-Dateien)
+├── shared/ # (Optional) Gemeinsamer Code
+│ └── (z.B. gemeinsame TypeScript-Typen, Konstanten)
+├── .env # Umgebungsvariablen für Docker Compose
+├── .gitignore
+├── package*.json # (Root-Package-JSON für npm-Skripte)
+└── (weitere Root-Dateien)
+
+## 🔁 ENTWICKLUNGSZYKLUS FÜR JEDES FEATURE:
+1.  **Planung:** Definiere den genauen Scope (was soll das Feature können?).
+2.  **Qwen-Generierung:** Nutze einen gezielten Prompt (wie im Beispiel für M2.1), um den Grundgerüst-Code zu generieren.
+3.  **Integration:** Füge den generierten Code in das Projekt ein.
+4.  **Testen:** Starte den betroffenen Dienst neu (`docker-compose up -d <service>`) und teste die Funktion.
+5.  **Iterieren:** Passe den generierten Code an, bis er korrekt funktioniert und den Anforderungen entspricht.
+
+## 💡 HINWEISE:
+- Nutze die Ollama-Instanz (`ollama run qwen2.5-coder:14b`) für gezielte Code-Generierung.
+- Achte auf korrekte TypeScript-Typisierung und Fehlerbehandlung.
+- Verwende die `console.log` oder den Browser-Debugger für die Fehlersuche.
+- Die API-Dokumentation ist in der `README.md` oder direkt im Code (`src/routes/...`) zu finden.
+- Die `.env`-Datei im Root-Verzeichnis enthält die notwendigen Konfigurationsparameter für Backend und DB.
+

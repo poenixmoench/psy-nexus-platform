@@ -1,0 +1,66 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║ 📊 PSY-NEXUS SYSTEM-ZUSTAND - PRODUKTIONSUMGEBUNG (AKTUALISIERT)             ║
+║                                                                              ║
+║ Vollständiger Überblick über alle laufenden und beendeten Dienste           ║
+║ Stand: 23.11.2025 - 00:15 UTC                                               ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+## 🖥️ SERVER-INFO
+- **Hostname:** psy-nexus-production
+- **IP-Adresse:** 157.180.31.27
+- **Betriebssystem:** Ubuntu 24.04.3 LTS
+- **Kernel:** 6.8.0-87-generic
+
+## 📦 PRODUKTIONSSYSTEME (Docker Compose)
+| Dienst         | Status    | Port (extern) | Beschreibung                             |
+| :-             | :-        | :-            | :-                                       |
+| **postgres**   | ✅ Online  | -             | PostgreSQL-Datenbank (Docker-Volume)     |
+| **backend**    | ✅ Online  | 3001 (HTTP)   | Express.js-Backend-API (JWT, Zod, CRUD)  |
+| **frontend**   | ✅ Online  | 80 (HTTP)     | Nginx-Webserver (aktuell leer)           |
+| **ollama**     | ✅ Online  | 11434 (API)   | Ollama-Server (KI-Modelle)               |
+
+## 📊 DIENSTDETAILS
+- **PostgreSQL (postgres):**
+  - **Version:** 15+
+  - **Daten:** Persistiert im `postgres_data`-Volume.
+  - **Funktion:** Speichert Benutzer (`users`) und Events (`events`) inkl. `start_date`, `end_date`.
+
+- **Backend-Service (backend):**
+  - **Version:** Express.js 4.x, Node.js 20+
+  - **Status:** Voll funktionsfähig. Authentifizierung (Register/Login), Autorisierung (JWT), Eingabevalidierung (Zod), CRUD-API für Events.
+  - **API-Endpunkte:** `/auth/register`, `/auth/login`, `/events` (GET, POST, PUT, DELETE).
+  - **Funktion:** Bereitstellung der API für das Frontend.
+
+- **Frontend-Service (frontend):**
+  - **Version:** Nginx 1.25+
+  - **Status:** Bereit für Frontend-Inhalte. Lädt aus dem `frontend/dist`-Verzeichnis.
+  - **Funktion:** Hostet die Vue.js-App.
+  - **Hinweis:** Nach Implementierung der M2.2 & M2.3 wird der Inhalt aktualisiert.
+
+- **Ollama-Service (ollama):**
+  - **Version:** Latest
+  - **Modelle:** `qwen2.5-coder:14b` installiert.
+  - **Funktion:** Bereit für KI-gestützte Code-Generierung und -Analyse.
+
+## 🔄 AKTUELLER FORTSCHRITT (Frontend - Woche 2)
+- **M2.1 (SKELETT-AUFBAU):** ✅ Abgeschlossen
+- **M2.2 (Frontend-Authentifizierung):** 🔄 In Arbeit (Code generiert, wird integriert)
+- **M2.3 (Frontend-Event-Ansicht):** 🔄 In Arbeit (Code generiert, wird integriert)
+- **Neue Dateien (geplant für Integration):**
+  - `apps/web/src/plugins/axios.ts`
+  - `apps/web/src/types/index.ts`
+  - `apps/web/src/stores/authStore.ts`
+  - `apps/web/src/views/LoginView.vue`
+  - `apps/web/src/views/RegisterView.vue`
+  - `apps/web/src/views/EventsView.vue`
+  - `apps/web/.env`
+
+## 🔄 NEXT STEPS
+- **Frontend-Entwicklung:** Integration der von Qwen generierten Dateien (M2.2 & M2.3).
+- **Frontend-Testing:** Verbindung von Frontend mit Backend API testen (Register, Login, Events).
+- **API-Dokumentation:** Erstellung einer OpenAPI/Swagger-Spezifikation (optional).
+- **Monitoring:** Einrichtung von Prometheus/Grafana für Metriken (optional).
+- **Backup-Strategie:** Automatisierung des Backups der `postgres_data`-Volumes und des Quellcodes.
+

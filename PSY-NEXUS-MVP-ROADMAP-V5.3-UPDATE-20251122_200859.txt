@@ -1,0 +1,97 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║ 🚀 PSY-NEXUS MVP - OPTIMIERTE ROADMAP V5.3 (VEREINIGT & ZENTRAL) - UPDATE 20.11.2025 ║
+║                                                                              ║
+║ Der *einzige* Plan für deine Entwicklung (Exklusiv: Schweizer GOA)           ║
+║ Production-Ready Build Plan mit Puffer & Qwen-Optimierung                    ║
+║ + ERWEITERUNG UM K.IO/TAXONOMIE-PLANUNG (20.11.2025)                       ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+## 📊 AKTUELLER STAND (20.11.2025 - 17:00 UTC):
+
+| Komponente                 | Status         | Rolle/Rolle im System                                                    |
+| :------------------------- | :------------- | :----------------------------------------------------------------------- |
+| **Docker Compose Setup**   | ✅ Abgeschlossen   | Stellt DB, Backend, Frontend als Container bereit (ohne fehlerhaftes Volume-Mapping) |
+| **Backend Build Pipeline** | ✅ Abgeschlossen   | TypeScript-Code wird erfolgreich kompiliert und in Docker-Image gebaut   |
+| **Backend Start**          | ✅ Abgeschlossen   | Backend-Container startet und läuft stabil                                |
+| **Datenbankverbindung**    | ✅ Abgeschlossen   | Backend verbindet sich erfolgreich mit PostgreSQL                         |
+| **Datenbankinitialisierung** | ✅ Abgeschlossen   | Tabellen `users` und `events` werden beim Start erstellt                  |
+| **CRUD API (Events)**      | ✅ Abgeschlossen   | POST, GET, PUT, DELETE für Events funktionieren                          |
+| **Authentifizierung (JWT)**| ✅ Abgeschlossen   | Register/Login-Endpunkte erstellt, Token-Generierung funktioniert         |
+| **Autorisierung (JWT MW)** | ✅ Abgeschlossen   | Middleware `authenticateToken` schützt Endpunkte                        |
+| **Eingabevalidierung (Zod)**| ✅ Abgeschlossen  | Middleware `validate` schützt Endpunkte vor ungültigen Eingaben           |
+| **API-Verfügbarkeit**      | ✅ Abgeschlossen   | API ist über Port 3001 erreichbar (nach Freischaltung der Firewall)       |
+| **Frontend (Nginx)**       | ✅ Abgeschlossen   | Frontend läuft über Nginx-Container, Port 80 erreichbar                    |
+| **Ollama-Server**          | ✅ Abgeschlossen   | Läuft als Systemdienst, bereit für KI-Unterstützung                       |
+| **SSL (Let's Encrypt)**    | ✅ Abgeschlossen   | Zertifikate für `psy-nexus.live` abgerufen und konfiguriert               |
+| **Zugriffsschutz (Events)**| ✅ Abgeschlossen   | POST, PUT, DELETE für `/events` erfordern gültiges JWT-Token              |
+| **Zugriffsschutz (Auth)**  | ✅ Abgeschlossen   | Authentifizierungs-Endpunkte (`/auth/register`, `/auth/login`) sind öffentlich. |
+| **Zugriffsschutz (GET Events)**| ✅ Abgeschlossen | GET `/events` ist öffentlich (kann später eingeschränkt werden).          |
+
+## 🎯 NÄCHSTE MEILENSTEINE (M2.x & K.IO)
+
+### M2.1: Frontend-Grundgerüst (Abgeschlossen)
+**Ziel:** Erstelle die grundlegende Vue.js/TypeScript-Struktur mit Vue Router und Axios.
+**Status:** ✅ **Abgeschlossen.** Siehe `apps/web/src/...`.
+
+### M2.2: Frontend-Authentifizierung (Geplant: Tag 1-2 nach M2.1)
+**Ziel:** Implementierung der Login- und Registrierungsformulare in der Vue.js-App, die mit der Backend-API kommunizieren.
+**Files zu erstellen/anpassen:**
+- `apps/web/src/services/authService.ts` (Funktionen für `register`, `login`, `logout`, Token-Management)
+- `apps/web/src/views/LoginView.vue` (Erweitert um Formularlogik)
+- `apps/web/src/views/RegisterView.vue` (Erweitert um Formularlogik)
+- `apps/web/src/stores/authStore.js` (z.B. Pinia Store für Benutzerstatus)
+
+### M2.3: Frontend-Event-Ansicht (Geplant: Tag 3-4 nach M2.1)
+**Ziel:** Anzeigen der Events aus der Backend-API im Frontend.
+**Files zu erstellen/anpassen:**
+- `apps/web/src/services/eventService.ts` (Funktionen für `getEvents`, `createEvent`, `updateEvent`, `deleteEvent`)
+- `apps/web/src/views/EventsView.vue` (Erweitert um Fetch- und Anzeigelogik)
+
+### M2.4: Frontend-Event-Erstellung/Bearbeitung/Löschung (Geplant: Tag 5-6 nach M2.1)
+**Ziel:** CRUD-Operationen für Events direkt aus dem Frontend heraus ermöglichen.
+**Files zu erstellen/anpassen:**
+- `apps/web/src/views/EventsView.vue` (Erweitert um Create/Edit/Delete-Formulare/Logik)
+- `apps/web/src/components/EventForm.vue` (Optionale wiederverwendbare Komponente für Event-Erstellung/Bearbeitung)
+
+## 🧭 K.IO / TAXONOMIE INTEGRATION PLAN (Strategisch - Woche 3 & 4)
+
+### K.IO.1: Frequenz-Taxonomie (Geplant: Woche 3-4)
+**Ziel:** Integration des Frequenz-Taxonomie-Manuskripts als eigenständige View/Route.
+**Files zu erstellen/anpassen:**
+- `apps/web/src/views/GenresView.vue` (oder `TaxonomyView.vue`) (Platzhalter für Inhalte)
+- `apps/web/src/content/` (z.B. Verzeichnis für Markdown- oder JSON-Inhalte)
+- `apps/web/src/services/contentService.ts` (z.B. Funktion zum Laden der Taxonomie-Inhalte)
+
+### K.IO.2: Manifest-Integration (Geplant: Woche 4)
+**Ziel:** Integration des spirituellen Manifests als eigenständige View/Route.
+**Files zu erstellen/anpassen:**
+- `apps/web/src/views/ManifestView.vue` (Platzhalter für Inhalte)
+- `apps/web/src/content/manifest.md` (oder JSON) (Inhalt des Manifests)
+
+## 🗺️ OPTIMIERTE 4-WOCHEN-ROADMAP (Skeleton First + K.IO)
+
+### WOCHE 1: SKELETT-AUFBAU (M2.1)
+**Fokus:** Funktionale Basis und Router-Gerüst.
+* **Design-Constraint:** Nur Schwarz, Weiß und Grau (keine Farben).
+* **Ergebnis:** Portal-Dashboard (`/`) ist im Browser sichtbar und klickbar.
+
+### WOCHE 2: FUNKTION (M2.2 & M2.3)
+**Fokus:** Datenfluss.
+* **Login/Register:** Formulare kommunizieren erfolgreich mit der API. JWT wird in `localStorage` gespeichert.
+* **Events:** Der Feed (`/events`) ruft Events ab und zeigt sie an (auch wenn die Liste leer ist).
+* **Upload:** Der Event-Generator (Formular) kann Events erstellen.
+
+### WOCHE 3: STABILITÄT & AUTORITÄT (M2.4 + K.IO Vorbereitung)
+**Fokus:** User Experience, Bugfixing und Vorbereitung der strategischen Inhalte.
+* **CRUD-Funktionen:** Bearbeiten und Löschen eigener Events implementieren.
+* **Mobile-Check:** Sicherstellen, dass die Navigation auf dem Handy funktioniert.
+* **K.IO Vorbereitung:** Struktur für Taxonomie/Manifest Views schaffen.
+
+### WOCHE 4: MAKE-UP & INHALT (Design 2.0 + K.IO Deployment)
+**Fokus:** Visueller Auftritt und Content-Deployment.
+* **Farb-Update:** Das minimalistische Grau weicht dem finalen **Deep Space Dark Mode** (Dunkelblau/Schwarz mit Neon-Akzenten).
+* **3D-Integration:** Platzhalter-Kacheln werden mit ersten **3D-Objekten** (z.B. rotierendes Logo oder Hintergrund) gefüllt.
+* **K.IO Deployment:** Die **Frequenz-Taxonomie** und das **Manifest** werden mit Inhalten befüllt und freigeschaltet.
+

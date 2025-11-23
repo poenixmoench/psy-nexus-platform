@@ -1,8 +1,12 @@
-console.log('Frontend is running! Connecting to Backend...');
+import { createApp } from 'vue'
+import { createPinia } from 'pinia'
+import router from '@/router'
+import App from './App.vue'
 
-// Basic DOM manipulation to confirm script is executing
-document.querySelector('#app')!.innerHTML = `
-  <h1>Willkommen bei Psy-Nexus!</h1>
-  <p>Frontend (Vite/TS) läuft stabil.</p>
-  <p>Backend-API-Status: ✅ (Getestet: /api/auth/register)</p>
-`;
+const app = createApp(App)
+const pinia = createPinia()
+
+app.use(pinia)
+app.use(router)
+
+app.mount('#app')

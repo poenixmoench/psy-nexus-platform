@@ -1,0 +1,68 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║ 🚀 PSY-NEXUS MVP - OPTIMIERTE ROADMAP V4.0 (VEREINIGT & ZENTRAL) - UPDATE 22.11.2025 ║
+║                                                                              ║
+║ Der *einzige* Plan für deine Entwicklung (Exklusiv: Schweizer GOA)           ║
+║ Production-Ready Build Plan mit Puffer & Qwen-Optimierung                    ║
+║ + ERWEITERUNG UM AKTUELLEN MVP-ZUSTAND (22.11.2025)                        ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+## 📊 AKTUELLER STAND (22.11.2025 - 17:00 UTC):
+
+| Komponente                 | Status         | Rolle/Rolle im System                                                    |
+| :------------------------- | :------------- | :----------------------------------------------------------------------- |
+| **Docker Compose Setup**   | ✅ Abgeschlossen   | Stellt DB, Backend, Frontend als Container bereit                        |
+| **Backend Build Pipeline** | ✅ Abgeschlossen   | TypeScript-Code wird erfolgreich kompiliert und in Docker-Image gebaut   |
+| **Backend Start**          | ✅ Abgeschlossen   | Backend-Container startet und läuft stabil                                |
+| **Datenbankverbindung**    | ✅ Abgeschlossen   | Backend verbindet sich erfolgreich mit PostgreSQL                         |
+| **Datenbankinitialisierung** | ✅ Abgeschlossen   | Tabellen `users` und `events` werden beim Start erstellt                  |
+| **CRUD API (Events)**      | ✅ Abgeschlossen   | POST, GET, PUT, DELETE für Events funktionieren                          |
+| **Authentifizierung (JWT)**| ✅ Abgeschlossen   | Register/Login-Endpunkte erstellt, Token-Generierung funktioniert         |
+| **Autorisierung (JWT MW)** | ✅ Abgeschlossen   | Middleware `authenticateToken` schützt Endpunkte                        |
+| **Eingabevalidierung (Zod)**| ✅ Abgeschlossen  | Middleware `validate` schützt Endpunkte vor ungültigen Eingaben           |
+| **API-Verfügbarkeit**      | ✅ Abgeschlossen   | API ist über Port 3001 erreichbar (nach Freischaltung der Firewall)       |
+| **Frontend (Nginx)**       | ✅ Abgeschlossen   | Frontend läuft über Nginx-Container, Port 80 erreichbar                    |
+| **Ollama-Server**          | ✅ Abgeschlossen   | Läuft als Systemdienst, bereit für KI-Unterstützung                       |
+| **SSL (Let's Encrypt)**    | ✅ Abgeschlossen   | Zertifikate für `psy-nexus.live` abgerufen und konfiguriert               |
+
+## 🎯 NÄCHSTE MEILENSTEINE (M2.x - Frontend & Integration)
+
+### M2.1: Frontend-Grundgerüst (Abgeschlossen)
+**Ziel:** Erstelle die grundlegende Vue.js/TypeScript-Struktur mit Vue Router und Axios.
+**Status:** ✅ **Abgeschlossen.** Siehe `apps/web/src/...`.
+
+### M2.2: Frontend-Authentifizierung (Geplant: Tag 1-2 nach M2.1)
+**Ziel:** Implementierung der Login- und Registrierungsformulare in der Vue-App, die mit der Backend-API kommunizieren.
+**Files zu erstellen/anpassen:**
+- `apps/web/src/services/authService.ts` (Funktionen für `register`, `login`, `logout`, Token-Management)
+- `apps/web/src/views/LoginView.vue` (Erweitert um Formularlogik)
+- `apps/web/src/views/RegisterView.vue` (Erweitert um Formularlogik)
+- `apps/web/src/stores/authStore.js` (z.B. Pinia Store für Benutzerstatus)
+
+### M2.3: Frontend-Event-Ansicht (Geplant: Tag 3-4 nach M2.1)
+**Ziel:** Anzeigen der Events aus der Backend-API im Frontend.
+**Files zu erstellen/anpassen:**
+- `apps/web/src/services/eventService.ts` (Funktionen für `getEvents`, `createEvent`, `updateEvent`, `deleteEvent`)
+- `apps/web/src/views/EventsView.vue` (Erweitert um Fetch- und Anzeigelogik)
+
+### M2.4: Frontend-Event-Erstellung/Bearbeitung/Löschung (Geplant: Tag 5-6 nach M2.1)
+**Ziel:** CRUD-Operationen für Events direkt aus dem Frontend heraus ermöglichen.
+**Files zu erstellen/anpassen:**
+- `apps/web/src/views/EventsView.vue` (Erweitert um Create/Edit/Delete-Formulare/Logik)
+- `apps/web/src/components/EventForm.vue` (Optionale wiederverwendbare Komponente für Event-Erstellung/Bearbeitung)
+
+## 🔁 ENTWICKLUNGSZYKLUS FÜR JEDES FEATURE:
+1.  **Planung:** Definiere den genauen Scope (was soll das Feature können?).
+2.  **Qwen-Generierung:** Nutze einen gezielten Prompt (wie im Beispiel für M2.1), um den Grundgerüst-Code zu generieren.
+3.  **Integration:** Füge den generierten Code in das Projekt ein.
+4.  **Testen:** Starte den betroffenen Dienst neu (`docker-compose up -d <service>`) und teste die Funktion.
+5.  **Iterieren:** Passe den generierten Code an, bis er korrekt funktioniert und den Anforderungen entspricht.
+
+## 💡 HINWEISE:
+- Nutze die Ollama-Instanz (`ollama run qwen2.5-coder:14b`) für gezielte Code-Generierung.
+- Achte auf korrekte TypeScript-Typisierung und Fehlerbehandlung.
+- Verwende die `console.log` oder den Browser-Debugger für die Fehlersuche.
+- Die API-Dokumentation ist in der `README.md` oder direkt im Code (`src/routes/...`) zu finden.
+- Die `.env`-Datei im Root-Verzeichnis enthält die notwendigen Konfigurationsparameter für Backend und DB.
+

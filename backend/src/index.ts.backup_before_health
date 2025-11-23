@@ -4,7 +4,6 @@ import { setupUserTable } from './db/userQueries'; // Importiere die Funktion zu
 import { setupEventTable } from './db/eventQueries'; // Importiere die Funktion zum Setup der Event-Tabelle
 import { authRoutes } from './routes/authRoutes';
 import { eventRoutes } from './routes/eventRoutes';
-import { healthRoutes } from './routes/health';
 
 const app = express();
 connectDB();
@@ -28,7 +27,6 @@ app.use(express.json());
 
 app.use('/auth', authRoutes);
 app.use('/events', eventRoutes);
-app.use('/health', healthRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(Number(PORT), () => {
