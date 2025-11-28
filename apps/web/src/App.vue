@@ -1,35 +1,44 @@
 <template>
-  <div id="app">
-    <nav>
-      <router-link to="/">Home</router-link> |
-      <router-link to="/events">Events</router-link> |
-      <router-link to="/login">Login</router-link> |
-      <router-link to="/register">Register</router-link>
-    </nav>
-    <router-view />
+  <div id="app" class="app-container">
+    <h1>🚀 PSY-NEXUS Dev Studio</h1>
+    <p>AI Development Environment powered by Qwen 14B Coder</p>
+    <SafeCodePreview
+      code="<div>Hello World</div>"
+      codeType="vue"
+      :securityIssues="[]"
+      @copy="handleCopy"
+      @approve="handleApprove"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import SafeCodePreview from './components/SafeCodePreview.vue'
+
+const handleCopy = () => {
+  console.log('Code copied!')
+}
+
+const handleApprove = () => {
+  console.log('Code approved!')
+}
 </script>
 
 <style scoped>
-#app {
-  max-width: 1280px;
+.app-container {
+  padding: 40px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
-  font-weight: normal;
-  text-align: center;
 }
-nav {
-  padding: 30px;
+
+h1 {
+  color: #00d4ff;
+  margin-bottom: 10px;
 }
-nav a {
-  font-weight: bold;
-  color: #2c3e50;
-  text-decoration: none;
-}
-nav a.router-link-exact-active {
-  color: #42b983;
+
+p {
+  color: #999;
+  margin-bottom: 30px;
 }
 </style>

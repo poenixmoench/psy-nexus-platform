@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import DOMPurify from 'dompurify';
+import { ref } from 'vue'
+import DOMPurify from 'dompurify'
 
 const props = withDefaults(defineProps<{
-  code: string;
-  codeType: string;
-  securityIssues?: string[];
+  code: string
+  codeType: string
+  securityIssues?: string[]
 }>(), {
   securityIssues: () => []
-});
+})
 
 const emit = defineEmits<{
-  copy: [];
-  approve: [];
-}>();
+  copy: []
+  approve: []
+}>()
 
 const generateSandboxHTML = (): string => {
   const sanitizedCode = DOMPurify.sanitize(props.code, {
@@ -21,30 +21,33 @@ const generateSandboxHTML = (): string => {
     ALLOWED_ATTR: ['class', 'id', 'style'],
     FORCE_BODY: true,
     RETURN_DOM_FRAGMENT: false
-  });
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; object-src 'none';"><style>*{box-sizing:border-box}body{margin:0;padding:20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#fff;color:#333}</style></head><body><div id="app">${sanitizedCode}</div><script>Object.defineProperty(window,'parent',{value:null,writable:false});Object.defineProperty(window,'top',{value:null,writable:false});try{Object.defineProperty(window,'location',{get(){throw new Error('blocked');},writable:false});}catch(e){}</script></body></html>`;
-};
+  })
+
+  const htmlContent = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; object-src 'none';"><style>*{box-sizing:border-box}body{margin:0;padding:20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#fff;color:#333}</style></head><body><div id="app">${sanitizedCode}</div><script>Object.defineProperty(window,'parent',{value:null,writable:false});Object.defineProperty(window,'top',{value:null,writable:false});try{Object.defineProperty(window,'location',{get(){throw new Error('blocked');},writable:false});}catch(e){}<\/script></body></html>`
+  
+  return htmlContent
+}
 
 const copyCode = async () => {
   try {
-    await navigator.clipboard.writeText(props.code);
-    emit('copy');
+    await navigator.clipboard.writeText(props.code)
+    emit('copy')
   } catch (error) {
-    console.error('Copy failed:', error);
+    console.error('Copy failed:', error)
   }
-};
+}
 
 const approveCode = () => {
-  emit('approve');
-};
+  emit('approve')
+}
 
 const handleIframeError = (error: Event) => {
-  console.error('Iframe error:', error);
-};
+  console.error('Iframe error:', error)
+}
 
 const handleIframeLoad = () => {
-  console.log('Preview ready');
-};
+  console.log('Preview ready')
+}
 </script>
 
 <template>

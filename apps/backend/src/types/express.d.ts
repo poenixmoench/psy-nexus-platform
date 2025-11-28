@@ -1,12 +1,25 @@
-// Definiert den Typ des Benutzerobjekts, das an req.user angehängt wird
-interface UserPayload {
-    id: number;
-    email: string;
+import { Request } from 'express'
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: number
+        email: string
+        role: 'user' | 'developer' | 'admin'
+      }
+    }
+  }
 }
 
-// Erweitert das Express Request-Interface
-declare namespace Express {
-    export interface Request {
-        user: UserPayload;
-    }
+export interface UserPayload {
+  id: number
+  email: string
+  role: 'user' | 'developer' | 'admin'
+}
+
+declare module 'express' {
+  interface Request {
+    user?: UserPayload
+  }
 }
