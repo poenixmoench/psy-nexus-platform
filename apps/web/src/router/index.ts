@@ -33,3 +33,12 @@ const router = createRouter({
 })
 
 export default router
+
+const agentStudio = {
+  path: '/agent-studio',
+  name: 'AgentStudio',
+  component: () => import('../views/AgentStudioView.vue'),
+  meta: { requiresAuth: true, requiresRole: 'developer' }
+}
+
+// Zu routes Array hinzufügen (in main router configuration)
