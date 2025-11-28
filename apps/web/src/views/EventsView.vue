@@ -1,60 +1,41 @@
 <template>
   <div class="events-view">
-    <h1 class="view-title">Event Creation</h1>
-    <EventForm @submitEvent="handleFormSubmission" />
-    <p v-if="statusMessage" :class="statusType">{{ statusMessage }}</p>
+    <h1 class="view-title">Events</h1>
+<div class="debug-output">Aktueller Ladezustand: {{ loading }}<br>Fehler: {{ error }}<pre>{{ events }}</pre></div>
+      <pre>{{ events }}</pre> <!-- Zeigt die Rohdaten zur Diagnose an -->
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import EventForm from '@/components/EventForm.vue';
-// FIX: Explizite .ts-Endung für vue-tsc im Docker-Build
-import { useAuthStore } from '@/stores/authStore.ts';
-import apiClient from '@/plugins/axios.ts';
+import { ref, onMounted } from 'vue';
+import apiClient from '@/plugins/axios'; // Stellen Sie sicher, dass dies korrekt importiert ist
 
-const authStore = useAuthStore();
-const statusMessage = ref('');
-const statusType = ref('success');
+const events = ref<any[]>([]); // Nutze any[] temporär
+const loading = ref(true);
+const error = ref<string | null>(null);
 
-async function handleFormSubmission(eventData: any) {
-    statusMessage.value = 'Submitting event...';
-    statusType.value = 'info';
-
-    try {
-      const token = authStore.token;
-      if (!token) {
-        statusMessage.value = 'Error: Not authenticated. Please log in.';
-        statusType.value = 'error';
-        console.error('No authentication token available');
-        return;
-      }
-
-      // Die API-Anfrage an den /events-Endpunkt des Backends
-      const response = await apiClient.post('/events', eventData, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.status === 201 || response.status === 200) {
-        statusMessage.value = `Event successfully created! ID: ${response.data.id}`;
-        statusType.value = 'success';
-        console.log('Event created:', response.data);
-      } else {
-        throw new Error('Failed to submit event with unexpected status');
-      }
-    } catch (error: any) {
-      statusMessage.value = `Error submitting event: ${error.response?.data?.message || error.message}`;
-      statusType.value = 'error';
-      console.error('Error submitting event:', error);
-    }
-}
+onMounted(async () => {
+  console.log("EventsView mounted, attempting to fetch events..."); // Debug-Log
+  try {
+    console.log("Making API call to /api/events..."); // Debug-Log
+    const response = await apiClient.get('/api/events');
+    console.log("API Response:", response); // Debug-Log
+    events.value = response.data;
+    console.log("Events loaded:", events.value); // Debug-Log
+  } catch (err: any) {
+    console.error('Error fetching events:', err); // Wichtig: Fehler in der Konsole
+    error.value = `Fehler beim Laden: ${err.message || 'Unbekannter Fehler'}`;
+  } finally {
+    loading.value = false;
+    console.log("Loading state set to false."); // Debug-Log
+  }
+});
 </script>
 
 <style scoped>
 .events-view {
-    max-width: 650px;
+    max-width: 800px;
     margin: 2rem auto;
     padding: 1rem;
 }
@@ -67,29 +48,23 @@ async function handleFormSubmission(eventData: any) {
     padding-bottom: 0.5rem;
 }
 
-p {
-    padding: 1rem;
-    margin-top: 1rem;
-    border-radius: 4px;
+.loading {
     text-align: center;
-    font-weight: bold;
+    color: #aaa;
 }
 
-.success {
-    background-color: #4caf5033; /* Light green background */
-    color: #4CAF50;
-    border: 1px solid #4CAF50;
+.error-message {
+    color: #f44336;
+    text-align: center;
+    padding: 1rem;
 }
 
-.error {
-    background-color: #f4433633; /* Light red background */
-    color: #F44336;
-    border: 1px solid #F44336;
-}
-
-.info {
-    background-color: #2196f333;
-    color: #2196F3;
-    border: 1px solid #2196F3;
+pre {
+    background-color: #2c2c2c;
+    color: #e0e0e0;
+    padding: 1rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    white-space: pre-wrap; /* Zeilenumbrüche erhalten */
 }
 </style>
