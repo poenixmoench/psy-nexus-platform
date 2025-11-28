@@ -15,7 +15,7 @@ COPY web ./web
 # Installation und Build im Frontend-Kontext
 WORKDIR /app/web
 RUN npm install
-RUN npm run build
+RUN npx tsc
 
 # Production Stage (Nginx)
 FROM nginx:alpine
