@@ -1,0 +1,86 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║ 📊 PSY-NEXUS SYSTEM-ZUSTAND - PRODUKTIONSUMGEBUNG (AKTUALISIERT)              ║
+║                                                                              ║
+║ Vollständiger Überblick über alle Dienste und Metriken                      ║
+║ Stand: 27.11.2025 - 23:05 UTC                                              ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+🖥️ SERVER-INFO:
+- Hostname: psy-nexus-production
+- IP-Adresse: 157.180.31.27
+- OS: Ubuntu 24.04.3 LTS
+- Kernel: 6.8.0-87-generic
+- Festplatte: 64% (26GB frei)
+
+📦 RUNNING CONTAINERS:
+
+docker-backend-1      | Node.js Express API (3000)          | ✅ Up 41min
+docker-db-1          | PostgreSQL 15-alpine                | ✅ Up 59min (healthy)
+psy-nexus-frontend-1 | Nginx 1.29.3 (SSL Proxy)           | ✅ Up 41min
+psy-nexus-certbot-1  | Let's Encrypt SSL Manager           | ✅ Up 41min
+
+🔐 DIENSTE - DETAILS:
+
+Database (db):
+- PostgreSQL 15.15-alpine
+- Status: Voll funktionsfähig
+- Benutzer: psy_user / psy_nexus_user
+- DB: db_name / psy_nexus_db
+- Tabelle events: 15 Spalten (updated)
+- Test-Event: 1 eingefügt ✅
+
+Backend (backend):
+- Node.js 18.x + Express + TypeScript
+- Status: Voll funktionsfähig
+- Port: 3000 (intern) / 3001 (extern)
+- API /api/health: ✅ {"status":"ok"}
+- API /api/events: ✅ Gibt Events mit neuem Schema zurück
+- Auth: Register/Login/JWT funktioniert
+
+Frontend (frontend):
+- Nginx 1.29.3
+- Status: Events werden angezeigt
+- Port: 80 (HTTP) / 443 (HTTPS mit SSL)
+- Proxy: /api/ → backend:3000 ✅
+- Vue.js: M2.3 implementiert ✅
+
+SSL Certificate:
+- Let's Encrypt
+- Status: Gültig
+- Gültig bis: 2026-02-25
+- Auto-Renewal: 12h (aktiv)
+
+📊 NETZWERK:
+- Alle Container im psy-nexus-network verbunden
+- Backend und Frontend können kommunizieren
+- Database erreichbar von Backend
+
+🔄 AKTUELLER FORTSCHRITT:
+
+M2.1 - Frontend Skelett           ✅ DONE
+M2.2 - Frontend Auth              ✅ DONE
+M2.3 - Event-Ansicht              ✅ DONE
+M2.4 - Event CRUD                 🔄 NEXT
+M3.x - Filterung/Sortierung       🔄 PLANNED
+M4.x - Design & 3D                🔄 PLANNED
+
+✅ API RESPONSES (LIVE):
+
+GET /api/health
+→ {"status":"ok","timestamp":"..."}
+
+GET /api/events
+→ [{"id":1,"title":"PSY-Nexus Launch","description":"...","genres":[],"lineup":[],"ticket_link":null,"ticket_type":null,"created_by":null,"created_at":"2025-11-27T22:00:48.879Z","updated_at":"2025-11-27T22:00:48.879Z"}]
+
+🎉 M2.3 STATUS: ✅ ERFOLGREICH ABGESCHLOSSEN!
+
+Database Schema: 15 Spalten ✅
+API vollständig: Events mit neuem Schema ✅
+Frontend: Zeigt Events korrekt an ✅
+Nginx Proxy: /api/ leitet korrekt ✅
+Backend-DB Connection: Stabil ✅
+SSL Certificate: Gültig + aktiv ✅
+
+🚀 SYSTEM IST M2.4-READY!

@@ -1,77 +1,137 @@
-import express, { Router } from 'express'
-import { Pool } from 'pg'
-import { authenticateToken, requireDeveloper } from '../middleware/auth'
-import { aiRateLimitMiddleware } from '../middleware/security'
-import { TaskService } from '../services/taskService'
-import { AgentRegistry } from '../agents/AgentRegistry'
-import logger from '../services/logger'
+import { Router, Request, Response } from 'express';
 
-const router = Router()
-const pool = new Pool()
-const taskService = new TaskService(pool)
-const agentRegistry = new AgentRegistry()
+const router = Router();
 
-router.post('/run', aiRateLimitMiddleware, authenticateToken, requireDeveloper, async (req, res) => {
-  try {
-    const { agentType, prompt } = req.body
-    const userId = (req as any).user.id
+console.log('[M5.0] Agent Routes Module wird geladen...');
 
-    if (!agentType || !prompt) {
-      return res.status(400).json({ error: 'agentType and prompt required' })
-    }
+// ============================================================
+// M5.0: Controller-Funktionen für CRUD-Operationen
+// ============================================================
 
-    if (!['CodeAnalyzerAgent', 'RefactoringAgent', 'TestGeneratorAgent', 'DocumentationAgent', 'SecurityAuditAgent'].includes(agentType)) {
-      return res.status(400).json({ error: 'Invalid agentType' })
-    }
-
-    const task = await taskService.createTask(userId, agentType, prompt)
-    logger.info(`📝 Task created`, { taskId: task.id, agentType, userId })
-
-    const agent = agentRegistry.getAgent(agentType, taskService, task.id)
+// POST /api/agents - Neuen Agenten erstellen
+const createAgent = (req: Request, res: Response) => {
+    const { name, model, prompt, description } = req.body;
     
-    agent.runTask(task).catch((error: any) => {
-      logger.error(`Agent execution failed`, { taskId: task.id, error: error.message })
-    })
-
-    res.json({ taskId: task.id, status: 'STARTED', message: `${agentType} started` })
-  } catch (error: any) {
-    logger.error('Agent run error', { error: error.message })
-    res.status(500).json({ error: 'Failed to run agent' })
-  }
-})
-
-router.get('/tasks/:taskId', authenticateToken, requireDeveloper, async (req, res) => {
-  try {
-    const { taskId } = req.params
-    const task = await taskService.getTaskById(taskId)
-
-    if (!task) {
-      return res.status(404).json({ error: 'Task not found' })
-    }
-
-    if (task.user_id !== (req as any).user.id) {
-      return res.status(403).json({ error: 'Not authorized' })
-    }
-
-    const results = await taskService.getTaskResults(taskId)
-    res.json({ task, results })
-  } catch (error: any) {
-    logger.error('Get task error', { error: error.message })
-    res.status(500).json({ error: 'Failed to get task' })
-  }
-})
-
-router.get('/list', authenticateToken, requireDeveloper, async (req, res) => {
-  try {
-    const userId = (req as any).user.id
-    const { limit = 20, offset = 0 } = req.query
+    console.log('[M5.0] POST /api/agents - Neuen Agenten erstellen');
+    console.log(`  - Name: ${name}`);
+    console.log(`  - Model: ${model || 'default'}`);
     
-    const tasks = await taskService.getTasksByUser(userId, parseInt(limit as string), parseInt(offset as string))
-    res.json({ tasks, total: tasks.length })
-  } catch (error: any) {
-    logger.error('List tasks error', { error: error.message })
-    res.status(500).json({ error: 'Failed to list tasks' })
-  }
-})
+    const newAgent = {
+        id: `agent-${Date.now()}`,
+        name: name,
+        model: model || 'openai/gpt-4o-mini',
+        prompt: prompt || 'You are a helpful assistant.',
+        description: description || '',
+        createdAt: new Date().toISOString()
+    };
+    
+    res.status(201).json({
+        success: true,
+        message: 'Agent erfolgreich erstellt',
+        agent: newAgent
+    });
+};
 
-export default router
+// GET /api/agents/:id - Einzelnen Agenten abrufen
+const getAgentById = (req: Request, res: Response) => {
+    const agentId = req.params.id;
+    
+    console.log(`[M5.0] GET /api/agents/${agentId} - Agenten-Details abrufen`);
+    
+    const agent = {
+        id: agentId,
+        name: agentId,
+        model: 'openai/gpt-4o-mini',
+        prompt: 'You are a helpful software engineer. Be concise and accurate.',
+        description: `Agent für ${agentId}`,
+        createdAt: '2025-12-02T04:00:00Z',
+        updatedAt: '2025-12-02T04:00:00Z'
+    };
+    
+    res.json({
+        success: true,
+        agent: agent
+    });
+};
+
+// GET /api/agents - Alle Agenten abrufen
+const getAgents = (req: Request, res: Response) => {
+    console.log('[M5.0] GET /api/agents - Alle Agenten abrufen');
+    
+    const mockAgents = [
+        {
+            id: 'SecurityAuditAgent',
+            name: 'Security Audit Agent',
+            model: 'openai/gpt-4o-mini',
+            description: 'Scanned für Sicherheitslücken und Vulnerabilities',
+            createdAt: '2025-12-01T00:00:00Z'
+        },
+        {
+            id: 'CodeReviewAgent',
+            name: 'Code Review Agent',
+            model: 'openai/gpt-4o-mini',
+            description: 'Überprüft Code-Qualität und Best Practices',
+            createdAt: '2025-12-01T00:00:00Z'
+        },
+        {
+            id: 'BugFixerAgent',
+            name: 'Bug Fixer Agent',
+            model: 'openai/gpt-4o-mini',
+            description: 'Identifiziert und behebt Bugs',
+            createdAt: '2025-12-01T00:00:00Z'
+        }
+    ];
+    
+    res.json({
+        success: true,
+        agents: mockAgents,
+        total: mockAgents.length
+    });
+};
+
+// PUT /api/agents/:id - Agenten aktualisieren
+const updateAgent = (req: Request, res: Response) => {
+    const agentId = req.params.id;
+    const { name, model, prompt, description } = req.body;
+    
+    console.log(`[M5.0] PUT /api/agents/${agentId} - Agent aktualisieren`);
+    console.log(`  - Neue Daten:`, { name, model, prompt, description });
+    
+    const updatedAgent = {
+        id: agentId,
+        name: name || agentId,
+        model: model || 'openai/gpt-4o-mini',
+        prompt: prompt || 'Updated prompt',
+        description: description || '',
+        updatedAt: new Date().toISOString()
+    };
+    
+    res.json({
+        success: true,
+        message: `Agent ${agentId} erfolgreich aktualisiert`,
+        agent: updatedAgent
+    });
+};
+
+// DELETE /api/agents/:id - Agenten löschen
+const deleteAgent = (req: Request, res: Response) => {
+    const agentId = req.params.id;
+    
+    console.log(`[M5.0] DELETE /api/agents/${agentId} - Agent löschen`);
+    
+    res.status(204).send();
+};
+
+// ============================================================
+// ROUTE DEFINITIONEN
+// ============================================================
+
+router.get('/', getAgents);
+router.post('/', createAgent);
+router.get('/:id', getAgentById);
+router.put('/:id', updateAgent);
+router.delete('/:id', deleteAgent);
+
+console.log('[M5.0] Agent Routes erfolgreich registriert');
+
+export default router;

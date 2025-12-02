@@ -1,0 +1,13 @@
+
+> psy-nexus-frontend@1.0.0 build
+> vite build
+
+vite v4.5.14 building for production...
+transforming...
+✓ 4 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                 0.39 kB │ gzip: 0.29 kB
+dist/assets/index-f01f71e2.css  0.08 kB │ gzip: 0.09 kB
+dist/assets/index-b8b632a9.js   0.77 kB │ gzip: 0.44 kB
+✓ built in 190ms

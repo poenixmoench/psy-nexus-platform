@@ -1,13 +1,11 @@
 {
   "name": "psy-nexus-backend",
   "version": "1.0.0",
-  "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "build": "tsc",
     "start": "node dist/index.js",
-    "lint": "eslint src/**/*.ts"
+    "build": "tsc",
+    "dev": "npm run build && npm start"
   },
   "dependencies": {
     "@types/jsonwebtoken": "^9.0.10",
@@ -19,16 +17,17 @@
     "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^7.5.1",
     "helmet": "^7.2.0",
-    "isomorphic-dompurify": "^2.9.0",
     "jsonwebtoken": "^9.0.2",
-    "zod": "^3.22.4"
+    "pg": "^8.11.3",
+    "winston": "^3.13.0",
+    "ws": "^8.15.0"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.17",
+    "@types/cors": "^2.8.19",
     "@types/express": "^4.17.21",
-    "@types/node": "^20.10.6",
-    "eslint": "^8.56.0",
-    "tsx": "^4.7.0",
-    "typescript": "^5.3.3"
+    "@types/node": "^20.19.25",
+    "@types/ws": "^8.5.8",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   }
 }

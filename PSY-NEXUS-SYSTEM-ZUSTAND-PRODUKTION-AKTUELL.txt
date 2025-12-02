@@ -1,0 +1,68 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║ 📊 PSY-NEXUS SYSTEM-ZUSTAND - PRODUKTIONSUMGEBUNG (AKTUALISIERT)              ║
+║                                                                              ║
+║ Vollständiger Überblick über alle laufenden und beendeten Dienste           ║
+║ Stand: 27.11.2025 - 21:33 UTC                                           ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+## 🖥️ SERVER-INFO
+- **Hostname:** psy-nexus-production
+- **IP-Adresse:** 157.180.31.27
+- **Betriebssystem:** Ubuntu 24.04.3 LTS
+- **Kernel:** 6.8.0-87-generic
+- **Speicherbelegung (Root-Partition):** 64%
+
+## 📦 PRODUKTIONSSYSTEME (Docker Compose - Aktueller Status)
+
+NAME               IMAGE                COMMAND                  STATUS
+docker-backend-1   docker-backend       "docker-entrypoint.s…"   Up 39 minutes
+docker-db-1        postgres:15-alpine   "docker-entrypoint.s…"   Up 59 minutes (healthy)
+
+## 🔐 PRODUKTIONSSYSTEME (Docker Compose - Details)
+
+- **Datenbank-Service (db):**
+  - **Version:** PostgreSQL 15.15 (alpine)
+  - **Status:** Voll funktionsfähig. Benutzer 'psy_nexus_user' und Datenbank 'psy_nexus_db' existieren und sind bereit.
+  - **Funktion:** Speicherung aller Plattformdaten (Benutzer, Events).
+
+- **Backend-Service (backend):**
+  - **Version:** Node.js 18.x, Express, TypeScript
+  - **Status:** Voll funktionsfähig. Authentifizierung (Register/Login), Autorisierung (JWT), Eingabevalidierung (Zod), CRUD-API für Events.
+  - **API-Endpunkte:** , ,  (GET, POST, PUT, DELETE), .
+  - **Funktion:** Bereitstellung der API für das Frontend.
+  - **API /api/health Antwort:** {"status":"ok","timestamp":"2025-11-27T21:33:07.767Z"}
+  - **API /api/events Antwort:** [{"id":1,"title":"PSY-Nexus Launch","description":"Platform goes LIVE!","start_date":"2025-11-27T20:56:16.091Z","end_date":"2025-11-27T22:56:16.091Z","location":"Online","organizer":"PSY Team","status":"active"}]
+
+- **Frontend-Service (frontend):**
+  - **Version:** Nginx 1.29.3
+  - **Status:** Bereit für Frontend-Inhalte. Lädt aus dem 'frontend/dist'-Verzeichnis. Stellt API-Anfragen an den 'backend'-Service über Nginx-Proxy weiter.
+  - **Funktion:** Hostet die Vue.js-SPA und leitet API-Anfragen weiter.
+  - **Hinweis:** Nach Implementierung der M2.2 & M2.3 wird der Inhalt aktualisiert.
+
+- **Certbot-Service (certbot):**
+  - **Version:** Certbot latest
+  - **Status:** Läuft und verwaltet SSL-Zertifikate im Hintergrund (automatisches Renewal alle 12h). Letztes Zertifikat gültig bis 2026-02-25.
+  - **Funktion:** SSL-Zertifikatsverwaltung für HTTPS (wird vom Host-NGINX genutzt).
+
+## 🔄 AKTUELLER FORTSCHRITT (Frontend - Woche 2)
+
+- **M2.1 (SKELETT-AUFBAU):** ✅ Abgeschlossen
+- **M2.2 (Frontend-Authentifizierung):** 🔄 In Arbeit (Code generiert, wird integriert)
+- **M2.3 (Frontend-Event-Ansicht):** 🔄 In Arbeit (Code generiert, wird integriert)
+- **M2.4 (Frontend-Event-Erstellung/Löschung):** 🔄 In Arbeit (Code generiert, wird integriert)
+- **Neue Dateien (geplant für Integration):**
+  - 
+  - 
+  - 
+  - 
+  - 
+  -  (aktualisiert)
+  - 
+
+## 🚀 ABSCHLUSS M2.3
+
+- **Ziel:** Anzeige von Events aus der Datenbank im Frontend.
+- **Status:** ✅ **ERFOLGREICH ABGESCHLOSSEN** - Die API  ist funktionsfähig und liefert Daten. Die Frontend-Infrastruktur (Nginx-Proxy) ist korrekt eingerichtet. Ein Test-Event wurde erfolgreich in die Datenbank eingefügt und wird von der API zurückgegeben. Das Frontend sollte jetzt in der Lage sein, die Events abzurufen und anzuzeigen, sobald die Implementierung in  vollständig ist und keine weiteren JavaScript-Fehler vorliegen. Die Browser-Netzwerkanalyse bestätigt die erfolgreiche Kommunikation zwischen Frontend und Backend via  mit Status 200 OK und korrektem JSON-Inhalt (z.B. [{"id":1,...}] oder []).
+

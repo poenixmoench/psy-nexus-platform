@@ -1,0 +1,21 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+ENV CI=true
+ENV VITE_API_BASE_URL=http://localhost:3001
+
+# Kopiere package files
+COPY package*.json ./
+
+# Installiere Abhängigkeiten
+RUN npm ci --prefer-offline --no-audit
+
+# Kopiere Source Code
+COPY . .
+
+# Expose Vite Port
+EXPOSE 5173
+
+# Starte Vite Dev Server mit Host binding
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

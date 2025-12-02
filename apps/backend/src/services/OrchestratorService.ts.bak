@@ -1,0 +1,141 @@
+// apps/backend/src/services/OrchestratorService.ts
+
+import { Response } from 'express';
+import { ollamaService } from '../services/OllamaStreamService';
+
+export interface AgentStrategyResponse {
+  title: string;
+  success: boolean;
+  steps: string[];
+  nextAgentId: number;
+  nextAgentName?: string;
+  needsCorrection?: boolean; // Für Korrektur-Flag
+}
+
+export interface SseEvent {
+  type: string;
+  content?: any;
+  language?: string;
+  filePath?: string;
+  action_needed?: boolean;
+  strategy?: AgentStrategyResponse;
+  needs_correction?: boolean; // Signal für Korrekturbedarf
+}
+
+export class OrchestratorService {
+  async orchestrate(userPrompt: string, res: Response): Promise<void> {
+    try {
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      });
+
+      const strategyPrompt = this.createStrategyPrompt(userPrompt);
+      let strategyRaw = await ollamaService.generateSimpleResponse(strategyPrompt);
+      let strategy: AgentStrategyResponse = JSON.parse(strategyRaw);
+
+        this.sendSseEvent(res, 'error', { message: 'Strategieplanung nicht erfolgreich' });
+        res.write('event: [DONE]\n\n');
+        res.end();
+        return;
+      }
+
+      this.sendSseEvent(res, 'strategy', strategy);
+
+      await this.runStreamAndIterate(res, strategy, 0, userPrompt);
+
+    } catch (err: any) {
+      this.sendSseEvent(res, 'error', { message: err.message || 'Unbekannter Fehler' });
+      res.write('event: [DONE]\n\n');
+      res.end();
+    }
+  }
+
+  private runStreamAndIterate(
+    res: Response,
+    strategy: AgentStrategyResponse,
+    stepIndex: number,
+    userPrompt: string
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (stepIndex >= strategy.steps.length) {
+        this.sendSseEvent(res, 'orchestration_complete', { strategy });
+        res.write('event: [DONE]\n\n');
+        res.end();
+        return resolve();
+      }
+
+      const currentStepPrompt = strategy.steps[stepIndex];
+      this.sendSseEvent(res, 'step_start', { stepIndex, prompt: currentStepPrompt });
+
+      ollamaService.streamPrompt(currentStepPrompt, strategy.nextAgentId)
+        .then((codeStream) => {
+          let lastNeedsCorrection = false;
+
+          codeStream.on('data', (chunk: any) => {
+            const text = chunk.toString();
+            if (text.trim()) {
+              const events = this.extractCodeBlocks(text);
+              events.forEach((event) => {
+                if (event.needs_correction) lastNeedsCorrection = true;
+                this.sendSseEvent(res, event.type, { ...event, stepIndex });
+              });
+            }
+          });
+
+          codeStream.on('end', async () => {
+            this.sendSseEvent(res, 'step_complete', { stepIndex });
+
+            if (lastNeedsCorrection && strategy.nextAgentId === 2) { // Beispiel: Coder Agent Id 2 fordert Korrektur
+              try {
+                // Neue Strategie mit Korrekturprompt anfordern
+                const correctionPrompt = `Bitte korrigiere diesen Workflow basierend auf der vorherigen Ausgabe: ${userPrompt}`;
+                const correctedRaw = await ollamaService.generateSimpleResponse(correctionPrompt);
+                strategy = JSON.parse(correctedRaw);
+                this.sendSseEvent(res, 'strategy_update', strategy);
+              } catch (err) {
+                this.sendSseEvent(res, 'error', { message: 'Fehler bei Korrekturstrategie: ' + err.message });
+                res.write('event: [DONE]\n\n');
+                res.end();
+                return reject(err);
+              }
+            }
+
+            this.runStreamAndIterate(res, strategy, stepIndex + 1, userPrompt)
+              .then(resolve)
+              .catch(reject);
+          });
+
+          codeStream.on('error', (err: Error) => {
+            this.sendSseEvent(res, 'error', { message: `Stream-Fehler in Schritt ${stepIndex}: ${err.message}` });
+            res.write('event: [DONE]\n\n');
+            res.end();
+            reject(err);
+          });
+        })
+        .catch(reject);
+    });
+  }
+
+  private createStrategyPrompt(userPrompt: string): string {
+    // Entfernt für Kürze, identisch zu vorherigem Prompt
+    return '';
+  }
+
+  private extractCodeBlocks(text: string): SseEvent[] {
+    // Identisch zu vorherigem Code
+    return [];
+  }
+
+  private sendSseEvent(res: Response, type: string, data: any): void {
+    let payload = '';
+    try {
+      payload = JSON.stringify(data);
+    } catch {
+      payload = String(data);
+    }
+    res.write(`event: ${type}\ndata: ${payload}\n\n`);
+  }
+}
+

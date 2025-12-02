@@ -16,7 +16,7 @@ import {
 export async function createEvent(title: string, date: string) {
   try {
     // Optional: Weitere Validierung hier
-    const result = await dbCreateEvent(title, date);
+    const result = await dbCreateEvent({ title, date });
     return result;
   } catch (error) {
     console.error('Service Error creating event:', error);
@@ -26,7 +26,7 @@ export async function createEvent(title: string, date: string) {
 
 export async function getAllEvents(sort: string = 'chronological') {
   try {
-    const result = await dbGetAllEvents(sort);
+    const result = await dbGetAllEvents();
     return result;
   } catch (error) {
     console.error('Service Error fetching events:', error);
@@ -47,7 +47,7 @@ export async function getEventById(id: number) {
 // NEU: Exportiere updateEvent
 export async function updateEvent(id: number, title: string, date: string) {
   try {
-    const result = await dbUpdateEvent(id, title, date);
+    const result = await dbUpdateEvent(id, title);
     return result;
   } catch (error) {
     console.error('Service Error updating event:', error);

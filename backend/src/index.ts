@@ -1,36 +1,42 @@
 import express from 'express';
-import { connectDB } from './db/connection'; // Stellt sicher, dass connectDB und pool exportiert werden
-import { setupUserTable } from './db/userQueries'; // Importiere die Funktion zum Setup der User-Tabelle
-import { setupEventTable } from './db/eventQueries'; // Importiere die Funktion zum Setup der Event-Tabelle
+import { connectDB } from './db/connection';
+import { setupUserTable } from './db/userQueries';
+import { setupEventTable } from './db/eventQueries';
 import { authRoutes } from './routes/authRoutes';
 import { eventRoutes } from './routes/eventRoutes';
 import { healthRoutes } from './routes/health';
 
 const app = express();
-connectDB();
 
-// Rufe setupUserTable nach dem Verbindungsaufbau auf
-// Verwende async/await oder .catch() für Fehlerbehandlung
-// ACHTUNG: Kein Argument übergeben, da setupUserTable() keine Parameter erwartet
-setupUserTable().catch(err => {
-  console.error('Failed to setup user table:', err);
+async function initializeApp() {
+    console.log('🚀 Initializing application...');
+    
+    // WICHTIG: Warte auf die DB-Verbindung und Tabellenerstellung
+    await connectDB();
+    
+    console.log('📋 Setting up database tables...');
+    await setupUserTable();
+    await setupEventTable();
+    console.log('✅ Database setup complete.');
+}
+
+// Führe die Initialisierung aus und starte den Server NUR bei Erfolg
+initializeApp().then(() => {
+    app.use(express.json());
+    // ... weitere Middleware ...
+
+    // Setze /api/ als Präfix für Events, um Konsistenz mit Frontend-Fix zu gewährleisten
+    app.use('/auth', authRoutes);
+    app.use('/api/events', eventRoutes); 
+    app.use('/api/health', healthRoutes); // Besser, wenn /api/ verwendet wird
+
+    const PORT = process.env.PORT || 3000;
+    app.listen(Number(PORT), () => {
+        console.log(`✨ Backend server running on port ${PORT}`);
+    });
+}).catch(err => {
+    console.error('❌ Failed to start server after initialization:', err);
+    process.exit(1); // Beende den Prozess, wenn die DB-Verbindung fehlschlägt
 });
 
-// Rufe setupEventTable nach dem Verbindungsaufbau auf
-// Verwende .catch() für Fehlerbehandlung
-// ACHTUNG: Kein Argument übergeben, da setupEventTable() keine Parameter erwartet
-setupEventTable().catch(err => {
-  console.error('Failed to setup event table:', err);
-});
-
-app.use(express.json());
-// ... weitere Middleware ...
-
-app.use('/auth', authRoutes);
-app.use('/events', eventRoutes);
-app.use('/health', healthRoutes);
-
-const PORT = process.env.PORT || 3000;
-app.listen(Number(PORT), () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+export { app };

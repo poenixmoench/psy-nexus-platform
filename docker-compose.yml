@@ -1,100 +1,88 @@
-services:
-  # --- Frontend Service (Nginx mit gebauter App) ---
-  frontend:
-    build:
-      # Build-Kontext ist der apps/web Ordner (wo die package.json liegt)
-      context: ./apps/web
-      # Das Dockerfile liegt direkt in diesem Ordner
-      dockerfile: Dockerfile
-    container_name: psy-nexus-frontend
-    restart: unless-stopped
-    ports:
-      # Exponiert Port 80 des Nginx-Containers nach außen auf Port 3000
-      - "8080:80" 
-    depends_on:
-      - backend
-    environment:
-      # URL zur Kommunikation mit dem Backend im Docker-Netzwerk
-      - VITE_API_URL=http://backend:5000
-    networks:
-      - app-network
+version: '3.8'
 
-  # --- Backend Service (Node.js API) ---
+services:
+  # =========================================================================
+  # PostgreSQL Database Service (KORRIGIERT)
+  # =========================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: psy-nexus-db
+    restart: always
+    environment:
+      POSTGRES_USER: psy_nexus_user
+      POSTGRES_PASSWORD: psy_nexus_password
+      POSTGRES_DB: psy_nexus_db
+      # FEHLERHAFTE ZEILE ENTFERNT: POSTGRES_INITDB_ARGS: "-c max_connections=100"
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U psy_nexus_user -d psy_nexus_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - psy-nexus-network
+
+  # =========================================================================
+  # Backend API Service
+  # =========================================================================
   backend:
     build:
-      # Build-Kontext: Root-Verzeichnis (um alle Quell-Dateien zu erfassen)
-      context: .
-      # Das Dockerfile liegt in backend/Dockerfile
-      dockerfile: backend/Dockerfile
+      context: ./apps/backend
+      dockerfile: Dockerfile.dev
     container_name: psy-nexus-backend
-    restart: unless-stopped
+    restart: on-failure
     ports:
-      # Exponiert Port 5000 des Node.js-Containers nach außen
-      - "5000:5000"
-    # Korrigiert den Entry-Point von 'server.js' auf das korrekte 'index.js'
-    command: node backend/dist/index.js 
+      - "3001:3001"
+    environment:
+      # Docker-interner PostgreSQL-Zugriff (nicht localhost!)
+      DATABASE_URL: postgresql://psy_nexus_user:psy_nexus_password@postgres:5432/psy_nexus_db
+      NODE_ENV: development
+      PORT: 3001
+      API_BASE_URL: http://localhost:3001
+      FRONTEND_URL: http://localhost:5173
+      LOG_LEVEL: debug
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
-    environment:
-      - NODE_ENV=production
-      - PORT=5000
-      - DATABASE_URL=postgresql://psyuser:password@postgres:5432/psy_nexus
-      - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=your-super-secret-jwt-key-change-in-prod
-      - SESSION_SECRET=your-super-secret-session-key-change-in-prod
-      - ALLOWED_ORIGINS=http://localhost:3000,http://frontend:3000
-    networks:
-      - app-network
-
-  # --- Datenbank Service (PostgreSQL) ---
-  postgres:
-    image: postgres:15-alpine
-    container_name: psy-nexus-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: psy_nexus
-      POSTGRES_USER: psyuser
-      POSTGRES_PASSWORD: password
     volumes:
-      - psy-nexus-db-data:/var/lib/postgresql/data
-      - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U psyuser -d psy_nexus"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
+      - ./apps/backend:/app
+      - /app/node_modules
     networks:
-      - app-network
+      - psy-nexus-network
+    command: npm run dev
 
-  # --- Caching/Session Service (Redis) ---
-  redis:
-    image: redis:7-alpine
-    container_name: psy-nexus-redis
-    restart: unless-stopped
+  # =========================================================================
+  # Frontend Development Server
+  # =========================================================================
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile.dev
+    container_name: psy-nexus-frontend
+    restart: on-failure
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_BASE_URL: http://localhost:3001
     volumes:
-      - psy-nexus-redis-data:/data
-    ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
+      - ./apps/frontend:/app
+      - /app/node_modules
     networks:
-      - app-network
+      - psy-nexus-network
+    command: npm run dev -- --host 0.0.0.0
 
+# =========================================================================
+# Volumes & Networks
+# =========================================================================
 volumes:
-  psy-nexus-db-data:
-  psy-nexus-redis-data:
+  db_data:
+    driver: local
 
 networks:
-  app-network:
+  psy-nexus-network:
     driver: bridge

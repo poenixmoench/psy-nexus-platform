@@ -1,0 +1,91 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║ 🚀 PSY-NEXUS MVP - OPTIMIERTE ROADMAP V4.5                                  ║
+║                                                                              ║
+║ Production-Ready | Puffer | Qwen-Optimierung                                ║
+║ Stand: 27.11.2025 - POST M2.3 IMPLEMENTATION                                ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+📊 KOMPONENTEN STATUS:
+
+Backend MVP      | ✅ Stabil  | Auth, Events CRUD, Validierung, JWT
+Frontend MVP     | ✅ Stabil  | Vue.js 3, Events-Ansicht, Auth-Formulare
+Infrastruktur    | ✅ Stabil  | Docker Compose, Nginx-Proxy, SSL gültig bis 2026-02-25
+KI-Entwicklung   | ✅ Bereit  | Ollama, qwen2.5-coder:14b für Code-Generierung
+
+🎯 MILESTONE PLAN:
+
+WOCHE 1: INFRASTRUKTUR & BACKEND MVP
+✅ M1.1-M1.6 Complete
+- Backend Server stabil
+- PostgreSQL verbunden
+- API-Endpunkte funktionsfähig
+- Test-Event erfolgreich eingefügt
+- SSL aktiv und gültig
+
+WOCHE 2: FRONTEND FUNKTION (M2.2 & M2.3)
+✅ M2.1: Frontend-Skelett (Routing, Komponenten)
+✅ M2.2: Frontend-Auth (Login/Register Forms)
+✅ M2.3: EVENT-ANSICHT COMPLETE!
+- Events aus API abrufen ✅
+- Autonome Chronologie implementiert ✅
+- LÄUFT GERADE Label ✅
+- Nginx-Proxy korrekt ✅
+- API liefert vollständiges Schema ✅
+
+WOCHE 3: ERWEITERUNG (M3.x - GEPLANT)
+🔄 M2.4: Frontend Event-Erstellung
+  - EventForm.vue (Formular)
+  - createEvent API-Call
+  - Integration mit EventsView
+🔄 M3.1: Event-Bearbeitung
+🔄 M3.2: Event-Löschung
+🔄 M3.3: Filterung/Sortierung
+
+WOCHE 4: DESIGN & INTEGRATION
+🔄 M4.1: Dark Mode (Deep Space)
+🔄 M4.2: 3D-Integration (Three.js)
+
+🔁 ENTWICKLUNGSZYKLUS (für jedes Feature):
+
+1. Planung → Scope definieren
+2. Code-Generierung (Qwen) → TypeScript/Vue/Express
+3. Integration → In Projekt einfügen
+4. Konfiguration → Dependencies, Imports
+5. Anpassung → Korrekte Pfade, Typen, Router
+6. Build & Deploy → npm run build + docker compose
+7. Testen → Browser + API (curl/Postman)
+8. Debugging → Fehler analysieren + iterieren
+9. Verifizierung → Feature funktioniert + keine Seiteneffekte
+
+💾 DATABASE SCHEMA (updated):
+
+events Table - 15 Spalten:
+✅ id (integer)          - Primary Key
+✅ title (varchar)       - Event-Name
+✅ description (text)    
+✅ start_date (timestamp)
+✅ end_date (timestamp)
+✅ location (varchar)
+✅ organizer (varchar)
+✅ status (varchar)
+✅ genres (text[])       - NEU (DEFAULT '{}')
+✅ lineup (text[])       - NEU (DEFAULT '{}')
+✅ ticket_link (text)    - NEU
+✅ ticket_type (text)    - NEU
+✅ created_by (integer)  - NEU
+✅ created_at (timestamp)- NEU (DEFAULT NOW())
+✅ updated_at (timestamp)- NEU (DEFAULT NOW())
+
+🎉 M2.3 COMPLETION STATUS: ✅ ERFOLGREICH ABGESCHLOSSEN
+
+- API /api/events funktioniert mit vollständigem Schema
+- Frontend ruft Events korrekt ab
+- Daten werden korrekt angezeigt
+- Nginx-Proxy leitet /api/ korrekt weiter
+- Backend-DB-Verbindung stabil
+- Neue Spalten in API-Antwort sichtbar
+- Browser zeigt "X Events gefunden" korrekt
+
+🚀 NÄCHSTER SCHRITT: M2.4 - Event-Erstellung im Frontend!
