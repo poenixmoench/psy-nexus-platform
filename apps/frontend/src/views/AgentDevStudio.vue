@@ -1,270 +1,120 @@
 <template>
-  <div class="agent-studio">
-    <!-- Header -->
-    <div class="header">
-      <h1>🤖 Agent Development Studio</h1>
-      <p>Live Multi-Model AI Orchestration</p>
+  <div style="background: #0d0d0d; color: #f0f0f0; padding: 30px; font-family: 'Ubuntu Mono', monospace; max-width: 1000px; margin: 0 auto;">
+    <h1 style="color: #00ffff; border-bottom: 2px solid #00ffff; padding-bottom: 10px;">🤖 Agent Dev Studio (M5.1-M5.2)</h1>
+
+    <div style="margin: 20px 0;">
+      <label style="color: #ff00ff; font-weight: bold;">KI-Befehl:</label>
+      <input v-model="command" type="text" placeholder="Generiere Vue Component..." style="width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #00ff00; color: #00ff00; margin: 5px 0;" />
     </div>
 
-    <!-- Agents Grid -->
-    <div class="agents-grid">
-      <button
-        v-for="agent in agents"
-        :key="agent.name"
-        @click="startAgent(agent.name)"
-        :disabled="loading"
-        class="agent-button"
-      >
-        <span class="icon">{{ agent.icon }}</span>
-        <span class="name">{{ agent.name }}</span>
-      </button>
+    <div style="margin: 20px 0;">
+      <label style="color: #ff00ff; font-weight: bold;">Agent:</label>
+      <select v-model="agentId" style="width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #00ff00; color: #00ff00; margin: 5px 0;">
+        <option value="agent_001">Code Agent</option>
+        <option value="agent_002">Design Agent</option>
+      </select>
     </div>
 
-    <!-- Live Stream Output -->
-    <div class="output-panel">
-      <h2>📋 Echtzeit-Ausgabe</h2>
-      <div class="output-box">
-        <div v-if="!isRunning" class="placeholder">
-          Wähle einen Agenten aus...
-        </div>
-        <div v-else class="stream">
-          <div v-for="(msg, idx) in messages" :key="idx" class="message">
-            {{ msg }}
-          </div>
-          <div v-if="loading" class="spinner">⏳ Lädt...</div>
-        </div>
+    <button @click="submitJob" :disabled="isSending" style="width: 100%; padding: 12px; background: transparent; color: #00ffff; border: 2px solid #00ffff; cursor: pointer; font-weight: bold; margin-bottom: 20px;">
+      {{ isSending ? '⏳ Sending...' : '🚀 Submit Job' }}
+    </button>
+
+    <div style="border: 1px dashed #ff00ff; padding: 15px; margin: 20px 0; background: #1a1a1a;">
+      <h3 style="color: #00ffff; margin-top: 0;">Status</h3>
+      <p style="color: #ff00ff;">{{ jobStatus }}</p>
+      <p v-if="lastJobData" style="color: #00ff00; background: #0d0d0d; padding: 10px; border-radius: 4px; max-height: 100px; overflow-y: auto; white-space: pre-wrap;">{{ lastJobData }}</p>
+    </div>
+
+    <div style="border: 2px solid #00ffff; padding: 20px; margin: 20px 0; background: #1a1a1a;">
+      <h3 style="color: #00ffff; margin-top: 0;">📡 Real-Time Logs (WebSocket)</h3>
+      <button @click="clearLogs" style="padding: 8px 15px; background: transparent; color: #ff00ff; border: 1px solid #ff00ff; cursor: pointer; font-family: inherit; margin-bottom: 10px;">Clear Logs</button>
+      <div style="background: #0d0d0d; border: 1px solid #333; padding: 10px; max-height: 200px; overflow-y: auto;">
+        <p v-if="realtimeLog.length === 0" style="color: #888; font-style: italic;">Waiting for feedback... (WS: {{ wsConnected ? '✅' : '❌' }})</p>
+        <div v-for="(entry, idx) in realtimeLog" :key="idx" style="color: #00ff00; margin-bottom: 3px; border-left: 2px solid #00ffff; padding-left: 8px;">{{ entry }}</div>
       </div>
-      <div class="stats">
-        <span>📊 Tokens: {{ tokenCount }}</span>
-        <span>⏱️ Status: {{ status }}</span>
-      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #1a1a1a; border: 1px solid #333; border-radius: 4px;">
+      <span :style="{ width: '12px', height: '12px', backgroundColor: wsConnected ? '#00ff00' : '#ff0000', borderRadius: '50%', boxShadow: wsConnected ? '0 0 5px #00ff00' : '0 0 5px #ff0000' }"></span>
+      {{ wsConnected ? '🟢 WebSocket Connected' : '🔴 WebSocket Disconnected' }}
     </div>
   </div>
 </template>
 
-<script>
-export default {
-  name: 'AgentDevStudio',
-  data() {
-    return {
-      agents: [
-        { name: 'Nexus Koordinator', icon: '🧠' },
-        { name: 'Qwen2.5 Coder', icon: '💻' },
-        { name: 'Performance Tuner', icon: '⚡' },
-        { name: 'UI Magier', icon: '🎨' },
-        { name: 'Debugger Fuchs', icon: '🔍' },
-        { name: 'Data Archivist', icon: '📦' }
-      ],
-      messages: [],
-      loading: false,
-      isRunning: false,
-      tokenCount: 0,
-      status: 'Idle',
-      ws: null,
-      runId: null
-    };
-  },
-  methods: {
-    async startAgent(agentName) {
-      this.loading = true;
-      this.isRunning = true;
-      this.messages = [];
-      this.tokenCount = 0;
-      this.status = 'Running...';
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue';
+import axios from 'axios';
 
-      try {
-        // POST to start live run
-        const response = await fetch(`/api/runs/start-live/${agentName}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ initialPrompt: 'Analyze and optimize' })
-        });
+const command = ref('Generiere Vue Component Skeleton für Event-Details');
+const agentId = ref('agent_001');
+const jobStatus = ref('IDLE');
+const isSending = ref(false);
+const lastJobData = ref('');
+const realtimeLog = ref<string[]>([]);
+const ws = ref<WebSocket | null>(null);
+const wsConnected = ref(false);
 
-        const data = await response.json();
-        this.runId = data.runId;
+async function submitJob() {
+  if (isSending.value) return;
+  isSending.value = true;
+  jobStatus.value = 'SENDING...';
+  realtimeLog.value = [];
 
-        // Connect WebSocket
-        this.connectWebSocket();
-      } catch (error) {
-        this.messages.push(`❌ Error: ${error.message}`);
-        this.status = 'Error';
-        this.loading = false;
-        this.isRunning = false;
-      }
-    },
+  try {
+    const response = await axios.post('/api/agents/orchestrate', {
+      command: command.value,
+      agentId: agentId.value
+    });
 
-    connectWebSocket() {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws/run?runId=${this.runId}`;
-
-      this.ws = new WebSocket(wsUrl);
-
-      this.ws.onopen = () => {
-        this.messages.push('✅ WebSocket Connected');
-      };
-
-      this.ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.message) {
-            this.messages.push(data.message);
-          }
-          if (data.tokens) {
-            this.tokenCount += data.tokens;
-          }
-          if (data.status) {
-            this.status = data.status;
-          }
-          if (data.completed) {
-            this.messages.push('✅ Workflow abgeschlossen!');
-            this.status = 'Completed';
-            this.loading = false;
-            this.isRunning = false;
-            this.ws.close();
-          }
-        } catch (e) {
-          console.error('WebSocket parse error:', e);
-        }
-      };
-
-      this.ws.onerror = (error) => {
-        this.messages.push(`❌ WebSocket Error: ${error}`);
-        this.status = 'Error';
-        this.loading = false;
-      };
-
-      this.ws.onclose = () => {
-        this.messages.push('❌ WebSocket Closed');
-        this.loading = false;
-      };
+    if (response.status === 202) {
+      jobStatus.value = '✅ QUEUED (Waiting for Worker)';
+      lastJobData.value = JSON.stringify(response.data, null, 2);
+      addLog('[M5.1] ✅ Job submitted successfully');
     }
+  } catch (error) {
+    jobStatus.value = '❌ ERROR';
+    addLog(`[M5.1] ❌ Error: ${error}`);
+  } finally {
+    isSending.value = false;
   }
-};
+}
+
+function addLog(msg: string) {
+  realtimeLog.value.push(msg);
+  if (realtimeLog.value.length > 100) realtimeLog.value.shift();
+}
+
+function clearLogs() {
+  realtimeLog.value = [];
+}
+
+onMounted(() => {
+  try {
+    ws.value = new WebSocket('ws://localhost:3001/ws/orchestration');
+    ws.value.onopen = () => {
+      wsConnected.value = true;
+      addLog('[M5.2] 🟢 WebSocket Connected');
+    };
+    ws.value.onmessage = (e) => {
+      const ts = new Date().toLocaleTimeString('de-DE');
+      addLog(`[WS ${ts}] ${e.data}`);
+    };
+    ws.value.onerror = () => {
+      wsConnected.value = false;
+      addLog('[M5.2] ⚠️ WebSocket Error');
+    };
+    ws.value.onclose = () => {
+      wsConnected.value = false;
+      addLog('[M5.2] 🔴 WebSocket Disconnected');
+    };
+  } catch (err) {
+    addLog(`[M5.2] ❌ WebSocket Error: ${err}`);
+  }
+});
+
+onUnmounted(() => {
+  if (ws.value?.readyState === WebSocket.OPEN) {
+    ws.value.close();
+  }
+});
 </script>
-
-<style scoped>
-.agent-studio {
-  padding: 20px;
-  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
-  min-height: 100vh;
-  color: #fff;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-}
-
-.header {
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-.header h1 {
-  font-size: 2.5rem;
-  margin: 0;
-  background: linear-gradient(135deg, #00d4ff, #0099ff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.header p {
-  font-size: 1.1rem;
-  color: #888;
-  margin: 10px 0 0 0;
-}
-
-.agents-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 15px;
-  margin-bottom: 40px;
-}
-
-.agent-button {
-  padding: 20px;
-  background: #1e40af;
-  border: 2px solid #0066ff;
-  border-radius: 10px;
-  color: #fff;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-.agent-button:hover:not(:disabled) {
-  background: #0066ff;
-  transform: translateY(-2px);
-  box-shadow: 0 0 20px rgba(0, 102, 255, 0.5);
-}
-
-.agent-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.icon {
-  font-size: 2rem;
-}
-
-.output-panel {
-  background: #111827;
-  border: 1px solid #333;
-  border-radius: 10px;
-  padding: 20px;
-}
-
-.output-box {
-  background: #0f172a;
-  border: 1px solid #1e3a8a;
-  border-radius: 8px;
-  padding: 15px;
-  height: 300px;
-  overflow-y: auto;
-  margin-bottom: 15px;
-  font-family: 'Courier New', monospace;
-  font-size: 0.9rem;
-}
-
-.placeholder {
-  color: #666;
-  text-align: center;
-  padding-top: 130px;
-}
-
-.message {
-  margin: 8px 0;
-  color: #0f0;
-  word-wrap: break-word;
-}
-
-.spinner {
-  color: #00d4ff;
-  animation: spin 1s linear infinite;
-}
-
-.stats {
-  display: flex;
-  gap: 30px;
-  padding: 10px;
-  background: #1e293b;
-  border-radius: 8px;
-  font-size: 0.95rem;
-}
-
-@keyframes spin {
-  0% { opacity: 0.5; }
-  50% { opacity: 1; }
-  100% { opacity: 0.5; }
-}
-
-@media (max-width: 768px) {
-  .agents-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .header h1 {
-    font-size: 1.8rem;
-  }
-}
-</style>
