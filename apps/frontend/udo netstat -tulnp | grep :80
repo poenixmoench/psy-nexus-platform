@@ -1,0 +1,23 @@
+[0;1;32m●[0m nginx.service - A high performance web server and a reverse proxy server
+     Loaded: loaded (]8;;file://psy-nexus-production/usr/lib/systemd/system/nginx.service/usr/lib/systemd/system/nginx.service]8;;; [0;1;38;5;185mdisabled[0m; preset: [0;1;32menabled[0m)
+     Active: [0;1;32mactive (running)[0m since Wed 2025-12-03 00:46:01 UTC; 32min ago
+       Docs: ]8;;man:nginx(8)man:nginx(8)]8;;
+    Process: 2724538 ExecStartPre=/usr/sbin/nginx -t -q -g daemon on; master_process on; (code=exited, status=0/SUCCESS)
+    Process: 2724540 ExecStart=/usr/sbin/nginx -g daemon on; master_process on; (code=exited, status=0/SUCCESS)
+   Main PID: 2724543 (nginx)
+      Tasks: 9 (limit: 18690)
+     Memory: 8.0M (peak: 8.5M)
+        CPU: 100ms
+     CGroup: /system.slice/nginx.service
+             ├─[0;38;5;245m2724543 "nginx: master process /usr/sbin/nginx -g daemon on; master_process on;"[0m
+             ├─[0;38;5;245m2724544 "nginx: worker process"[0m
+             ├─[0;38;5;245m2724545 "nginx: worker process"[0m
+             ├─[0;38;5;245m2724546 "nginx: worker process"[0m
+             ├─[0;38;5;245m2724547 "nginx: worker process"[0m
+             ├─[0;38;5;245m2724548 "nginx: worker process"[0m
+             ├─[0;38;5;245m2724549 "nginx: worker process"[0m
+             ├─[0;38;5;245m2724550 "nginx: worker process"[0m
+             └─[0;38;5;245m2724551 "nginx: worker process"[0m
+
+Dec 03 00:46:01 psy-nexus-production systemd[1]: Starting nginx.service - A high performance web server and a reverse proxy server...
+Dec 03 00:46:01 psy-nexus-production systemd[1]: Started nginx.service - A high performance web server and a reverse proxy server.

@@ -1,0 +1,57 @@
+import { AgentRepository } from '../repositories/AgentRepository';
+import { IAgent } from '../types/Agent';
+
+export class AgentService {
+  private repository: AgentRepository;
+
+  constructor() {
+    this.repository = new AgentRepository();
+  }
+
+  async getAllAgents(): Promise<IAgent[]> {
+    const result = await this.repository.findAll();
+    return result;
+  }
+
+  async getAgentById(id: string): Promise<IAgent | null> {
+    if (!id) throw new Error('Agent ID ist erforderlich');
+    const agent = await this.repository.findById(id);
+    if (!agent) throw new Error(`Agent mit ID ${id} nicht gefunden`);
+    return agent;
+  }
+
+  async createAgent(data: Partial<IAgent>): Promise<IAgent> {
+    if (!data.name?.trim()) throw new Error('Agent-Name ist erforderlich');
+    if (!data.modelName?.trim()) throw new Error('Modellname ist erforderlich');
+    if (data.name.length < 3) throw new Error('Name muss mindestens 3 Zeichen haben');
+
+    const agentData: IAgent = {
+      id: data.id || `agent-${Date.now()}`,
+      name: data.name.trim(),
+      modelName: data.modelName.trim(),
+      systemPrompt: data.systemPrompt || '',
+      status: data.status || 'active',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    return await this.repository.create(agentData);
+  }
+
+  async updateAgent(id: string, data: Partial<IAgent>): Promise<IAgent | null> {
+    if (!id) throw new Error('Agent ID ist erforderlich');
+    if (data.name && data.name.length < 3) throw new Error('Name muss mindestens 3 Zeichen haben');
+
+    const updateData = {
+      ...data,
+      updatedAt: new Date()
+    };
+
+    return await this.repository.update(id, updateData);
+  }
+
+  async deleteAgent(id: string): Promise<boolean> {
+    if (!id) throw new Error('Agent ID ist erforderlich');
+    return await this.repository.delete(id);
+  }
+}

@@ -1,0 +1,118 @@
+nohup: ignoring input
+
+> psy-nexus-platform-root@1.0.0 start:dev
+> docker-compose -f infrastructure/docker/docker-compose.yml up --build --force-recreate -d
+
+time="2025-12-02T18:38:47Z" level=warning msg="/root/psy-nexus-platform/infrastructure/docker/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+#1 [internal] load local bake definitions
+#1 reading from stdin 973B done
+#1 DONE 0.0s
+
+#2 [frontend internal] load build definition from Dockerfile
+#2 transferring dockerfile: 723B done
+#2 DONE 0.0s
+
+#3 [backend internal] load build definition from Dockerfile
+#3 transferring dockerfile: 699B done
+#3 DONE 0.0s
+
+#4 [backend internal] load metadata for docker.io/library/node:20-alpine
+#4 DONE 0.9s
+
+#5 [frontend internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [backend internal] load .dockerignore
+#6 transferring context: 2B done
+#6 DONE 0.0s
+
+#7 [backend build 1/6] FROM docker.io/library/node:20-alpine@sha256:16858294071a56ffd4cce9f17b57136cc39e41507b40e245b4f8e906f7a19463
+#7 DONE 0.0s
+
+#8 [backend internal] load build context
+#8 transferring context: 3.78kB 0.2s done
+#8 DONE 0.2s
+
+#9 [frontend internal] load build context
+#9 transferring context: 234.01kB 0.2s done
+#9 DONE 0.2s
+
+#10 [backend builder 3/7] COPY apps/backend/package*.json ./
+#10 CACHED
+
+#11 [backend builder 7/7] RUN npm run build
+#11 CACHED
+
+#12 [backend builder 4/7] RUN npm ci
+#12 CACHED
+
+#13 [backend builder 6/7] COPY apps/backend/src ./src
+#13 CACHED
+
+#14 [backend stage-1 4/5] RUN npm ci --only=production &&     npm cache clean --force
+#14 CACHED
+
+#15 [backend builder 5/7] COPY apps/backend/tsconfig.json ./
+#15 CACHED
+
+#16 [backend stage-1 5/5] COPY --from=builder /app/dist ./dist
+#16 CACHED
+
+#17 [frontend build 6/6] RUN npm run build
+#17 CACHED
+
+#18 [frontend build 5/6] COPY . .
+#18 CACHED
+
+#19 [frontend build 4/6] RUN npm ci
+#19 CACHED
+
+#20 [frontend build 3/6] COPY package*.json ./
+#20 CACHED
+
+#21 [frontend build 2/6] WORKDIR /app
+#21 CACHED
+
+#22 [frontend stage-1 3/4] RUN npm install -g serve
+#22 CACHED
+
+#23 [frontend stage-1 2/4] WORKDIR /usr/app
+#23 CACHED
+
+#24 [frontend stage-1 4/4] COPY --from=build /app/dist /usr/app/dist
+#24 CACHED
+
+#25 [backend] exporting to image
+#25 exporting layers done
+#25 writing image sha256:9d7cb9e34ad0d88969529964e86b0ff70edcc22a5112a7163b8d1eca38668673 done
+#25 naming to docker.io/library/docker-backend done
+#25 DONE 0.0s
+
+#26 [frontend] exporting to image
+#26 exporting layers done
+#26 writing image sha256:20a1c210b20f44f712b39b43036d9bc415f31a8fd2ee2b03f0579bb4f1692947 done
+#26 naming to docker.io/library/docker-frontend done
+#26 DONE 0.0s
+
+#27 [backend] resolving provenance for metadata file
+#27 DONE 0.0s
+
+#28 [frontend] resolving provenance for metadata file
+#28 DONE 0.0s
+ docker-backend  Built
+ docker-frontend  Built
+ Container docker-db-1  Creating
+ Container docker-db-1  Created
+ Container docker-backend-1  Creating
+ Container docker-backend-1  Created
+ Container docker-frontend-1  Creating
+ Container docker-frontend-1  Created
+ Container docker-db-1  Starting
+ Container docker-db-1  Started
+ Container docker-db-1  Waiting
+ Container docker-db-1  Healthy
+ Container docker-backend-1  Starting
+ Container docker-backend-1  Started
+ Container docker-frontend-1  Starting
+ Container docker-frontend-1  Started

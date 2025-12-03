@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
-import AgentDevStudio from '@/views/AgentDevStudio.vue'
+import AgentDevStudio from '../views/AgentDevStudio.vue'
 
 const routes: RouteRecordRaw[] = [
   {

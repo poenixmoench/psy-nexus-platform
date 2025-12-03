@@ -1,0 +1,101 @@
+import { Router, Request, Response } from 'express';
+import { AgentRepository } from '../repositories/AgentRepository';
+import { AppError } from '../errors';
+
+const router = Router();
+const agentRepository = new AgentRepository();
+
+// MUST BE FIRST: READ ALL - GET /api/v2/agents
+router.get('/', async (req: Request, res: Response) => {
+  try {
+    const agents = await agentRepository.findAll();
+    res.json({ status: 200, data: agents, total: agents.length });
+  } catch (error: any) {
+    const appError = error instanceof AppError ? error : new Error(error.message);
+    const status = error instanceof AppError ? error.status : 500;
+    res.status(status).json({ status, error: appError.message });
+  }
+});
+
+// MUST BE SECOND: FILTER BY STATUS - GET /api/v2/agents/status/:status
+router.get('/status/:status', async (req: Request, res: Response) => {
+  try {
+    const { status } = req.params;
+    const agents = await agentRepository.findByStatus(status);
+    res.json({ status: 200, data: agents, total: agents.length });
+  } catch (error: any) {
+    const appError = error instanceof AppError ? error : new Error(error.message);
+    const statusCode = error instanceof AppError ? error.status : 500;
+    res.status(statusCode).json({ status: statusCode, error: appError.message });
+  }
+});
+
+// MUST BE THIRD: CREATE - POST /api/v2/agents
+router.post('/', async (req: Request, res: Response) => {
+  try {
+    const { id, name, modelName, systemPrompt, status } = req.body;
+    const agent = await agentRepository.create({
+      id,
+      name,
+      modelName,
+      systemPrompt,
+      status,
+    } as any);
+    res.status(201).json({ status: 201, data: agent });
+  } catch (error: any) {
+    const appError = error instanceof AppError ? error : new Error(error.message);
+    const status = error instanceof AppError ? error.status : 500;
+    res.status(status).json({ status, error: appError.message });
+  }
+});
+
+// MUST BE LAST: READ BY ID - GET /api/v2/agents/:id
+router.get('/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const agent = await agentRepository.findById(id);
+    if (!agent) {
+      return res.status(404).json({ status: 404, error: `Agent with ID ${id} not found` });
+    }
+    res.json({ status: 200, data: agent });
+  } catch (error: any) {
+    const appError = error instanceof AppError ? error : new Error(error.message);
+    const status = error instanceof AppError ? error.status : 500;
+    res.status(status).json({ status, error: appError.message });
+  }
+});
+
+// UPDATE - PUT /api/v2/agents/:id
+router.put('/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+    const agent = await agentRepository.update(id, updateData as any);
+    if (!agent) {
+      return res.status(404).json({ status: 404, error: `Agent with ID ${id} not found` });
+    }
+    res.json({ status: 200, data: agent });
+  } catch (error: any) {
+    const appError = error instanceof AppError ? error : new Error(error.message);
+    const status = error instanceof AppError ? error.status : 500;
+    res.status(status).json({ status, error: appError.message });
+  }
+});
+
+// DELETE - DELETE /api/v2/agents/:id
+router.delete('/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const deleted = await agentRepository.delete(id);
+    if (!deleted) {
+      return res.status(404).json({ status: 404, error: `Agent with ID ${id} not found` });
+    }
+    res.json({ status: 200, data: { id, deleted: true } });
+  } catch (error: any) {
+    const appError = error instanceof AppError ? error : new Error(error.message);
+    const status = error instanceof AppError ? error.status : 500;
+    res.status(status).json({ status, error: appError.message });
+  }
+});
+
+export default router;

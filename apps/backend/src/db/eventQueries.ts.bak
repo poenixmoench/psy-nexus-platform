@@ -1,0 +1,68 @@
+import { pool } from './db';
+
+export interface Event {
+  id: string;
+  name: string;
+  description: string;
+  start_date: string;
+  end_date: string;
+  location: string;
+  created_by: string;
+  status?: string;
+}
+
+export async function getAllEvents(): Promise<Event[]> {
+  try {
+    const result = await pool.query('SELECT * FROM events ORDER BY start_date DESC');
+    return result.rows as Event[];
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    return [];
+  }
+}
+
+export async function getEventById(id: string): Promise<Event | null> {
+  try {
+    const result = await pool.query('SELECT * FROM events WHERE id = $1', [id]);
+    return (result.rows[0] as Event) || null;
+  } catch (error) {
+    console.error('Error fetching event:', error);
+    return null;
+  }
+}
+
+export async function createEvent(event: Omit<Event, 'id'>): Promise<Event> {
+  try {
+    const result = await pool.query(
+      'INSERT INTO events (name, description, start_date, end_date, location, created_by) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [event.name, event.description, event.start_date, event.end_date, event.location, event.created_by]
+    );
+    return result.rows[0] as Event;
+  } catch (error) {
+    console.error('Error creating event:', error);
+    throw error;
+  }
+}
+
+export async function updateEvent(id: string, event: Partial<Event>): Promise<Event | null> {
+  try {
+    const result = await pool.query(
+      'UPDATE events SET name = $1, description = $2 WHERE id = $3 RETURNING *',
+      [event.name, event.description, id]
+    );
+    return (result.rows[0] as Event) || null;
+  } catch (error) {
+    console.error('Error updating event:', error);
+    return null;
+  }
+}
+
+export async function deleteEvent(id: string): Promise<boolean> {
+  try {
+    const result = await pool.query('DELETE FROM events WHERE id = $1 RETURNING id', [id]);
+    return result.rows.length > 0;
+  } catch (error) {
+    console.error('Error deleting event:', error);
+    return false;
+  }
+}

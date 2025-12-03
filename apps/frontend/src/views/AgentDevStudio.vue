@@ -1,275 +1,270 @@
 <template>
-  <div class="agent-dev-studio">
-    <h1>Agenten Entwicklungsstudio</h1>
-    <div v-if="loadingConversation || isLiveStreamActive" class="spinner-container">
-        <span class="spinner-text">Lädt...</span>
+  <div class="agent-studio">
+    <!-- Header -->
+    <div class="header">
+      <h1>🤖 Agent Development Studio</h1>
+      <p>Live Multi-Model AI Orchestration</p>
     </div>
 
-    <div v-else>
-        <div class="agents-container">
-            <button
-                v-for="agent in agents"
-                :key="agent.id"
-                :class="['status-badge', agent.status]"
-                @click="startAgentRun(agent)"
-            >
-                {{ agent.name }}
-            </button>
+    <!-- Agents Grid -->
+    <div class="agents-grid">
+      <button
+        v-for="agent in agents"
+        :key="agent.name"
+        @click="startAgent(agent.name)"
+        :disabled="loading"
+        class="agent-button"
+      >
+        <span class="icon">{{ agent.icon }}</span>
+        <span class="name">{{ agent.name }}</span>
+      </button>
+    </div>
+
+    <!-- Live Stream Output -->
+    <div class="output-panel">
+      <h2>📋 Echtzeit-Ausgabe</h2>
+      <div class="output-box">
+        <div v-if="!isRunning" class="placeholder">
+          Wähle einen Agenten aus...
         </div>
-    </div>
-
-    <div v-if="liveError" class="error-message">
-        Fehler beim Live-Streaming: {{ liveError }}
-    </div>
-
-    <div v-if="streamMessages.length > 0" class="message-container">
-        <h3>Live-Protokoll (Run: {{ selectedRunId }})</h3>
-        <div
-            v-for="(message, index) in streamMessages"
-            :key="index"
-            class="message"
-            :class="{
-                'stream-message': message.type === 'stream',
-                'complete-message': message.type === 'complete'
-            }"
-        >
-            {{ message.content }} ({{ new Date(message.timestamp).toLocaleTimeString('de-DE') }})
+        <div v-else class="stream">
+          <div v-for="(msg, idx) in messages" :key="idx" class="message">
+            {{ msg }}
+          </div>
+          <div v-if="loading" class="spinner">⏳ Lädt...</div>
         </div>
+      </div>
+      <div class="stats">
+        <span>📊 Tokens: {{ tokenCount }}</span>
+        <span>⏱️ Status: {{ status }}</span>
+      </div>
     </div>
-</div>
+  </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref, onBeforeUnmount } from 'vue';
-import axios from 'axios';
+<script>
+export default {
+  name: 'AgentDevStudio',
+  data() {
+    return {
+      agents: [
+        { name: 'Nexus Koordinator', icon: '🧠' },
+        { name: 'Qwen2.5 Coder', icon: '💻' },
+        { name: 'Performance Tuner', icon: '⚡' },
+        { name: 'UI Magier', icon: '🎨' },
+        { name: 'Debugger Fuchs', icon: '🔍' },
+        { name: 'Data Archivist', icon: '📦' }
+      ],
+      messages: [],
+      loading: false,
+      isRunning: false,
+      tokenCount: 0,
+      status: 'Idle',
+      ws: null,
+      runId: null
+    };
+  },
+  methods: {
+    async startAgent(agentName) {
+      this.loading = true;
+      this.isRunning = true;
+      this.messages = [];
+      this.tokenCount = 0;
+      this.status = 'Running...';
 
-interface IStreamMessage {
-    type: 'stream' | 'complete';
-    content: string;
-    timestamp: string;
-    runId: string;
-}
-
-interface IAgent {
-    id: string;
-    name: string;
-    status: 'active' | 'inactive';
-}
-
-export default defineComponent({
-    setup() {
-        // ✅ KORRIGIERT: Nutze localhost statt 157.180.31.27
-        const API_BASE_URL = 'http://157.180.31.27:3001/api';
-        const WS_BASE_URL = 'ws://157.180.31.27:3001/ws/';
-
-        const liveWs = ref<WebSocket | null>(null);
-        const isLiveStreamActive = ref<boolean>(false);
-        const liveError = ref<string>('');
-        const loadingConversation = ref<boolean>(false);
-        const selectedRunId = ref<string>('');
-
-        const agents: IAgent[] = [
-            { id: '1', name: 'CodeReviewAgent', status: 'active' },
-            { id: '2', name: 'SecurityAuditAgent', status: 'active' },
-            { id: '3', name: 'BugFixerAgent', status: 'inactive' }
-        ];
-        const streamMessages = ref<IStreamMessage[]>([]);
-
-        const closeWebSocket = () => {
-            if (liveWs.value) {
-                console.log('[WS] Verbindung wird geschlossen.');
-                liveWs.value.close();
-                liveWs.value = null;
-            }
-            isLiveStreamActive.value = false;
-            loadingConversation.value = false;
-        };
-
-        const startAgentRun = async (agent: IAgent) => {
-            if (isLiveStreamActive.value) {
-                console.warn('Ein Stream läuft bereits.');
-                return;
-            }
-
-            loadingConversation.value = true;
-            closeWebSocket();
-            liveError.value = '';
-            streamMessages.value = [];
-
-            try {
-                console.log(`[API] Starte Live-Lauf für Agent ${agent.name}...`);
-                const response = await axios.post(`${API_BASE_URL}/runs/start-live/${agent.name}`);
-                const runId = response.data.runId;
-
-                selectedRunId.value = runId;
-                connectWebSocket(runId, agent.name);
-
-                streamMessages.value.push({
-                    type: 'stream',
-                    content: `[SYSTEM] Starte Agenten-Lauf: ${agent.name}. Erwarte Stream...`,
-                    timestamp: new Date().toISOString(),
-                    runId: runId
-                });
-
-            } catch (error: any) {
-                console.error('Fehler beim Starten des Agenten:', error);
-                liveError.value = `Fehler beim Starten des Agenten: ${error.message || 'Netzwerkfehler'}`;
-                loadingConversation.value = false;
-            }
-        };
-
-        const connectWebSocket = (runId: string, agentName: string) => {
-            closeWebSocket();
-
-            // ✅ KORRIGIERT: Nutze richtige URL ohne "/live/"
-            const wsUrl = `${WS_BASE_URL}${runId}`;
-            console.log(`[WS] Verbinde zu: ${wsUrl}`);
-            
-            liveWs.value = new WebSocket(wsUrl);
-
-            liveWs.value.onopen = () => {
-                console.log('[WS] ✅ WebSocket-Verbindung geöffnet');
-                isLiveStreamActive.value = true;
-                loadingConversation.value = false;
-            };
-
-            liveWs.value.onmessage = (event) => {
-                try {
-                    const message: IStreamMessage = JSON.parse(event.data);
-                    console.log('[WS] 📨 Nachricht erhalten:', message);
-                    if (message.type === 'stream') {
-                        streamMessages.value.push(message);
-                    } else if (message.type === 'complete') {
-                        message.content = `[SYSTEM] ✅ Agenten-Lauf erfolgreich beendet.`;
-                        streamMessages.value.push(message);
-                        closeWebSocket();
-                    }
-                } catch (e) {
-                    console.error('[WS] Fehler beim Parsen der Nachricht:', e);
-                    liveError.value = 'Fehler beim Empfangen von Stream-Daten.';
-                    closeWebSocket();
-                }
-            };
-
-            liveWs.value.onerror = (error) => {
-                console.error('[WS] 🔴 WebSocket-Fehler:', error);
-                liveError.value = 'Ein kritischer Fehler beim Live-Streaming ist aufgetreten.';
-                closeWebSocket();
-            };
-
-            liveWs.value.onclose = () => {
-                console.log('[WS] ❌ WebSocket-Verbindung geschlossen');
-                isLiveStreamActive.value = false;
-            };
-        };
-
-        onBeforeUnmount(() => {
-            closeWebSocket();
+      try {
+        // POST to start live run
+        const response = await fetch(`/api/runs/start-live/${agentName}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initialPrompt: 'Analyze and optimize' })
         });
 
-        return {
-            agents,
-            startAgentRun,
-            isLiveStreamActive,
-            liveError,
-            loadingConversation,
-            streamMessages,
-            selectedRunId
-        };
+        const data = await response.json();
+        this.runId = data.runId;
+
+        // Connect WebSocket
+        this.connectWebSocket();
+      } catch (error) {
+        this.messages.push(`❌ Error: ${error.message}`);
+        this.status = 'Error';
+        this.loading = false;
+        this.isRunning = false;
+      }
+    },
+
+    connectWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws/run?runId=${this.runId}`;
+
+      this.ws = new WebSocket(wsUrl);
+
+      this.ws.onopen = () => {
+        this.messages.push('✅ WebSocket Connected');
+      };
+
+      this.ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.message) {
+            this.messages.push(data.message);
+          }
+          if (data.tokens) {
+            this.tokenCount += data.tokens;
+          }
+          if (data.status) {
+            this.status = data.status;
+          }
+          if (data.completed) {
+            this.messages.push('✅ Workflow abgeschlossen!');
+            this.status = 'Completed';
+            this.loading = false;
+            this.isRunning = false;
+            this.ws.close();
+          }
+        } catch (e) {
+          console.error('WebSocket parse error:', e);
+        }
+      };
+
+      this.ws.onerror = (error) => {
+        this.messages.push(`❌ WebSocket Error: ${error}`);
+        this.status = 'Error';
+        this.loading = false;
+      };
+
+      this.ws.onclose = () => {
+        this.messages.push('❌ WebSocket Closed');
+        this.loading = false;
+      };
     }
-});
+  }
+};
 </script>
 
 <style scoped>
-.agent-dev-studio {
-    max-width: 900px;
-    margin: 20px auto;
-    padding: 30px;
-    background-color: #f4f4f4;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+.agent-studio {
+  padding: 20px;
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+  min-height: 100vh;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-h1 {
-    border-bottom: 2px solid #ccc;
-    padding-bottom: 15px;
-    margin-bottom: 25px;
+.header {
+  text-align: center;
+  margin-bottom: 40px;
 }
 
-.spinner-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 150px;
+.header h1 {
+  font-size: 2.5rem;
+  margin: 0;
+  background: linear-gradient(135deg, #00d4ff, #0099ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-.spinner-text {
-    font-size: 1.5em;
-    color: #007bff;
+.header p {
+  font-size: 1.1rem;
+  color: #888;
+  margin: 10px 0 0 0;
 }
 
-.agents-container {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
+.agents-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin-bottom: 40px;
 }
 
-.status-badge {
-    padding: 10px 15px;
-    border-radius: 6px;
-    cursor: pointer;
-    border: none;
-    font-weight: bold;
-    transition: background-color 0.2s;
+.agent-button {
+  padding: 20px;
+  background: #1e40af;
+  border: 2px solid #0066ff;
+  border-radius: 10px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
 
-.status-badge.active {
-    background-color: #28a745;
-    color: white;
+.agent-button:hover:not(:disabled) {
+  background: #0066ff;
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(0, 102, 255, 0.5);
 }
 
-.status-badge.inactive {
-    background-color: #dc3545;
-    color: white;
+.agent-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-.status-badge:hover {
-    opacity: 0.8;
+.icon {
+  font-size: 2rem;
 }
 
-.error-message {
-    color: #dc3545;
-    background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
-    padding: 10px;
-    border-radius: 4px;
-    margin-top: 15px;
+.output-panel {
+  background: #111827;
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 20px;
 }
 
-.message-container {
-    margin-top: 30px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 15px;
-    background-color: #fff;
-    max-height: 400px;
-    overflow-y: auto;
+.output-box {
+  background: #0f172a;
+  border: 1px solid #1e3a8a;
+  border-radius: 8px;
+  padding: 15px;
+  height: 300px;
+  overflow-y: auto;
+  margin-bottom: 15px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+}
+
+.placeholder {
+  color: #666;
+  text-align: center;
+  padding-top: 130px;
 }
 
 .message {
-    padding: 8px 0;
-    border-bottom: 1px dotted #eee;
-    font-family: monospace;
-    font-size: 0.9em;
+  margin: 8px 0;
+  color: #0f0;
+  word-wrap: break-word;
 }
 
-.stream-message {
-    color: #007bff;
+.spinner {
+  color: #00d4ff;
+  animation: spin 1s linear infinite;
 }
 
-.complete-message {
-    color: #28a745;
-    font-weight: bold;
-    background-color: #e9ecef;
+.stats {
+  display: flex;
+  gap: 30px;
+  padding: 10px;
+  background: #1e293b;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+@keyframes spin {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
+@media (max-width: 768px) {
+  .agents-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .header h1 {
+    font-size: 1.8rem;
+  }
 }
 </style>

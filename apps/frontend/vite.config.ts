@@ -5,11 +5,12 @@ import path from 'path'
 export default defineConfig({
   plugins: [vue()],
   server: {
-    host: '0.0.0.0',  // ✅ Höre auf ALLEN Interfaces
-    port: 5173,
+    port: 5176,
+    host: '0.0.0.0',
     hmr: {
-      host: '157.180.31.27',  // ✅ HMR auf öffentliche IP
-      port: 5173
+      host: '157.180.31.27',
+      port: 5176,
+      protocol: 'http'
     }
   },
   resolve: {
