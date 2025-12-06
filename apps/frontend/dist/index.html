@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>PSY-NEXUS Agent Dev Studio</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Mono&display=swap" rel="stylesheet">
+  <style>
+    /* Limettengrün-Terminal-Stil */
+    body { margin: 0; padding: 0; background: #1c1e21; color: #39FF14; font-family: 'Ubuntu Mono', monospace; }
+    .studio { padding: 2rem; min-height: 100vh; }
+    .header { display: flex; justify-content: space-between; border-bottom: 1px solid #39FF14; padding-bottom: 1rem; margin-bottom: 2rem; }
+    .status-live { background: rgba(57,255,20,0.1); padding: 0.5rem 1rem; border: 1px solid #39FF14; border-radius: 4px; }
+    button { background: #39FF14; color: black; padding: 1rem 2rem; border: none; font-size: 1.1rem; cursor: pointer; border-radius: 4px; font-family: 'Ubuntu Mono', monospace; }
+  </style>
+</head>
+<body>
+  <div id="app" class="studio">
+    <header class="header">
+      <h1>🚀 AGENT DEV STUDIO</h1>
+      <span class="status-live">STATUS: LIVE</span>
+    </header>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+      <div>
+        <h2>🟢 Backend API</h2>
+        <a href="http://157.180.31.27/health" target="_blank">/health → Test (Browser-Redirect)</a>
+      </div>
+      <div>
+        <button @click="testOrchestration">🧪 API TEST → Orchestrierung</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+    createApp({
+      methods: {
+        async testOrchestration() {
+          try {
+            // Orchestrierung POST korrigiert (Port 80 ist Standard und wird weggelassen)
+            const res = await fetch('http://157.180.31.27/api/orchestrate', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({prompt: 'Vue Agent Card', socketId: 'browser-123'})
+            });
+            const data = await res.json();
+            alert('✅ API LIVE: ' + data.message);
+          } catch (e) {
+            alert('❌ Backend nicht erreichbar oder falsche Antwort');
+          }
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
