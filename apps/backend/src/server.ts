@@ -1,25 +1,24 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
 import cors from 'cors';
-import http from 'http';
-import bodyParser from 'body-parser';
 
 const app = express();
-const server = http.createServer(app);
-const PORT = 3000;
+const PORT = parseInt(process.env.PORT || '3000', 10);
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 
-app.get('/health', (req: Request, res: Response) => {
-  res.json({ status: 'healthy', timestamp: new Date().toISOString(), connectedClients: 0 });
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    service: 'psy-nexus-backend',
+    timestamp: new Date().toISOString()
+  });
 });
 
-app.post('/api/orchestrate', async (req: Request, res: Response) => {
-  const { prompt, socketId } = req.body;
-  console.log(`🟢 ORCHESTRIERUNG: ${socketId} → ${prompt.substring(0,50)}...`);
-  res.json({ message: 'Orchestrierung gestartet', socketId });
+app.get('/api/agents/health', (req, res) => {
+  res.json({ status: 'healthy', service: 'agents-api' });
 });
 
-server.listen(PORT, () => {
-  console.log(`🚀 PSY-NEXUS M5.0 LIVE - http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
 });

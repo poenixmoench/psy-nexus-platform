@@ -1,23 +1,18 @@
-import { Logger } from '../utils/logger.js';
+import axios from 'axios';
 
 export class AiOrchestratorService {
-private static instance: AiOrchestratorService;
-private logger = new Logger();
+  private ollamaUrl = process.env.OLLAMA_URL || 'http://ollama:11434';
 
-private constructor() {
-this.logger.info('AiOrchestratorService initialisiert');
-}
-
-public static getInstance(): AiOrchestratorService {
-if (!AiOrchestratorService.instance) {
-AiOrchestratorService.instance = new AiOrchestratorService();
-}
-return AiOrchestratorService.instance;
-}
-
-public async handleUserQuery(prompt: string, socketId: string): Promise<void> {
-this.logger.info(ORCHESTRIERUNG GESTARTET - Socket: ${socketId});
-// TODO: Qwen Integration
-this.logger.info('ORCHESTRIERUNG ABGESCHLOSSEN');
-}
+  async orchestrate(data: any): Promise<any> {
+    try {
+      const response = await axios.post(`${this.ollamaUrl}/api/generate`, {
+        model: 'qwen:7b',
+        prompt: data.prompt || 'Hello',
+        stream: false,
+      });
+      return { success: true, response: response.data };
+    } catch (error) {
+      throw new Error('Orchestration failed: ' + (error as Error).message);
+    }
+  }
 }

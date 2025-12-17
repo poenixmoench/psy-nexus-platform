@@ -1,0 +1,54 @@
+services:
+  backend:
+    image: node:20-alpine
+    container_name: psy-nexus-backend
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+      - ./frontend/dist:/app/frontend/dist
+    ports:
+      - "3001:3000"
+    env_file: .env
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOST=0.0.0.0
+    command: node index.js
+    networks:
+      - psy-nexus-network
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:latest
+    container_name: psy-nexus-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - psy-nexus-network
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: psy-nexus-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/ssl/letsencrypt/live/psy-nexus.live/fullchain.pem:/etc/nginx/ssl/cert.pem:ro
+      - ./nginx/ssl/letsencrypt/live/psy-nexus.live/privkey.pem:/etc/nginx/ssl/key.pem:ro
+    depends_on:
+      - backend
+    networks:
+      - psy-nexus-network
+    restart: unless-stopped
+
+networks:
+  psy-nexus-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    external: true

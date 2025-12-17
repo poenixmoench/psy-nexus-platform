@@ -1,0 +1,91 @@
+services:
+  db:
+    image: mongo:latest
+    container_name: psy-nexus-mongodb
+    restart: always
+    command: mongod --auth
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo_root
+      MONGO_INITDB_ROOT_PASSWORD: SecureMongo2025!
+    volumes:
+      - psy-nexus_mongodb_data:/data/db
+    networks:
+      - psy-nexus
+
+  proxy-manager:
+    image: jc21/nginx-proxy-manager:latest
+    restart: always
+    ports:
+      - '80:80'
+      - '81:81'
+      - '443:443'
+    volumes:
+      - ./data:/data
+      - ./data/logs:/var/log/nginx
+      - ./data/ssl:/etc/letsencrypt
+    environment:
+      DB_MYSQL_HOST: mysql-npm
+      DB_MYSQL_PORT: 3306
+      DB_MYSQL_USER: npm
+      DB_MYSQL_PASSWORD: npm2025
+      DB_MYSQL_NAME: npm
+    depends_on:
+      - mysql-npm
+    networks:
+      - psy-nexus
+
+  mysql-npm:
+    image: mysql:8
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: npm2025
+      MYSQL_DATABASE: npm
+      MYSQL_USER: npm
+      MYSQL_PASSWORD: npm2025
+    volumes:
+      - mysql-npm-data:/var/lib/mysql
+    networks:
+      - psy-nexus
+
+volumes:
+  psy-nexus_mongodb_data:
+    external: true
+  mysql-npm-data:
+
+networks:
+  psy-nexus:
+    driver: bridge
+
+  frontend:
+    image: nginx:alpine
+    restart: always
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html:ro
+    networks:
+      - psy-nexus
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`psy-nexus.live`)"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+
+  backend:
+    image: node:20-alpine
+    restart: always
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    command: sh -c "npm install && npm run start:prod"
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongo_root:SecureMongo2025!@psy-nexus-mongodb:27017/psynexus?authSource=admin
+    networks:
+      - psy-nexus
+      - psy-nexus
+
+  frontend:
+    image: nginx:alpine
+    restart: always
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    networks:
+      - psy-nexus

@@ -1,0 +1,7 @@
+2025/12/06 11:21:46 [error] 248#248: *150 frontend could not be resolved (2: Server failure), client: 96.41.38.202, server: psy-nexus.live, request: "GET / HTTP/1.1", host: "psy-nexus.live"
+2025/12/06 11:21:47 [error] 248#248: *150 frontend could not be resolved (2: Server failure), client: 96.41.38.202, server: psy-nexus.live, request: "GET /@vite/env HTTP/1.1", host: "psy-nexus.live"
+2025/12/06 11:21:47 [error] 248#248: *150 frontend could not be resolved (2: Server failure), client: 96.41.38.202, server: psy-nexus.live, request: "GET /actutor/env HTTP/1.1", host: "psy-nexus.live"
+2025/12/06 11:21:47 [error] 248#248: *150 frontend could not be resolved (2: Server failure), client: 96.41.38.202, server: psy-nexus.live, request: "GET /.vscode/sftp.json HTTP/1.1", host: "psy-nexus.live"
+2025/12/06 11:21:47 [error] 248#248: *150 frontend could not be resolved (2: Server failure), client: 96.41.38.202, server: psy-nexus.live, request: "GET /.env HTTP/1.1", host: "psy-nexus.live"
+2025/12/06 11:21:47 [error] 248#248: *150 frontend could not be resolved (2: Server failure), client: 96.41.38.202, server: psy-nexus.live, request: "GET /.git/config HTTP/1.1", host: "psy-nexus.live"
+2025/12/06 11:22:12 [error] 250#250: *152 frontend could not be resolved (2: Server failure), client: 213.55.222.128, server: psy-nexus.live, request: "GET / HTTP/2.0", host: "psy-nexus.live"

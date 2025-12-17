@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  db:
+    image: mongo:latest
+    container_name: psy-nexus-mongodb
+    command: ["mongod", "--auth"]
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27017:27017" # Nur für Debugging/Zugriff von außen. Kann für Prod entfernt werden.
+
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    image: psy-nexus-backend:1.0
+    container_name: psy-nexus-backend-container
+    restart: always
+    environment:
+      NODE_ENV: production
+      MONGO_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@db:27017/psy_nexus?authSource=admin
+      # Fügen Sie hier weitere benötigte Umgebungsvariablen hinzu (z.B. JWT_SECRET)
+    ports:
+      - "3000:3000" # Exponiert den API-Port für das Host-System (optional, für Debug)
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+    image: psy-nexus-frontend:1.0
+    container_name: psy-nexus-frontend-container
+    restart: always
+    # WICHTIG: Die ports-Sektion wurde entfernt, da der NGINX Proxy Manager (proxy)
+    # nun den Host-Port 80 belegt und den Traffic intern an diesen Container weiterleitet.
+    depends_on:
+      - backend
+
+  proxy:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: psy-nexus-proxy-manager
+    restart: always
+    ports:
+      # Port 80 und 443 leiten den gesamten HTTP/HTTPS-Verkehr an diesen Proxy weiter
+      - '80:80'
+      - '443:443'
+      # Port 81 für die Admin-Weboberfläche des Proxy Managers
+      - '81:81'
+    volumes:
+      - ./data/proxy:/data
+      - /etc/letsencrypt:/etc/letsencrypt # WICHTIG: Speicherort für SSL-Zertifikate
+    depends_on:
+      - frontend
+
+volumes:
+  mongodb_data:
+  proxy_data:
+  db:
+    image: mongo:latest
+    container_name: psy-nexus-mongodb
+    command: ["mongod", "--auth"]
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    command: ["mongod", "--auth", "--bind_ip_all"]
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27017:27017"  # Prod: Entfernen!

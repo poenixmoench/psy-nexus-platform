@@ -1,0 +1,56 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: psy-nexus-backend
+    ports:
+      - "3001:3000"
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/psy-nexus
+      PORT: 3000
+      HOST: 0.0.0.0
+      AGENT_TOKEN: dev-secret-2025
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - ./frontend/dist:/app/public:ro
+    depends_on:
+      - mongodb
+    networks:
+      - psy-nexus-network
+    restart: always
+
+  mongodb:
+    image: mongo:latest
+    container_name: psy-nexus-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - psy-nexus-network
+    restart: always
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: psy-nexus-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/certs:ro
+      - ./frontend/dist:/app/public:ro
+    depends_on:
+      - backend
+    networks:
+      - psy-nexus-network
+    restart: always
+
+networks:
+  psy-nexus-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:

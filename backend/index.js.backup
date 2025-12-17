@@ -1,0 +1,226 @@
+const express = require('express');
+const http = require('http');
+const path = require('path');
+const fs = require('fs');
+const axios = require('axios');
+const mongoose = require('mongoose');
+const initializeWebSocket = require('./src/websocket');
+const connectDB = require('./src/db');
+
+// ===== MODELS IMPORTIEREN =====
+const Agent = require('./src/models/Agent');
+const Message = require('./src/models/Message');
+const Session = require('./src/models/Session');
+const Event = require('./src/models/Event');
+const Task = require('./src/models/Task');
+const User = require('./src/models/User');
+
+const app = express();
+app.use(express.json());
+app.set('trust proxy', 1);
+
+const port = process.env.PORT || 3000;
+const host = process.env.HOST || '0.0.0.0';
+const AGENT_TOKEN = process.env.AGENT_TOKEN || 'dev-secret-2025';
+
+// ===== DATABASE CONNECTION =====
+let db;
+connectDB().then(connection => {
+  db = connection;
+  console.log('✅ Database models loaded');
+  initializeAgents();
+}).catch(error => console.error('❌ DB Error:', error));
+
+// ===== INITIALIZE AGENTS IN DATABASE =====
+const initializeAgents = async () => {
+  try {
+    const agentCount = await Agent.countDocuments();
+    if (agentCount === 0) {
+      const defaultAgents = [
+        { id: 'orion', name: 'ORION', role: 'Gatekeeper', description: 'Zentrale Kontrolle und Vermittlung', color: '#32CD32', capabilities: ['coordination', 'routing', 'user_interaction'] },
+        { id: 'nexus-prime', name: 'NEXUS-PRIME', role: 'Backend Architekt', description: 'API und Infrastruktur', color: '#00FFFF', capabilities: ['backend', 'api', 'database'] },
+        { id: 'aura', name: 'AURA', role: 'Design Master', description: 'Design System und UI', color: '#FF00FF', capabilities: ['design', 'styling', 'components'] },
+        { id: 'syntax', name: 'SYNTAX', role: 'Component Builder', description: 'Vue und React Komponenten', color: '#FFD700', capabilities: ['frontend', 'components', 'vue', 'react'] },
+        { id: 'validus', name: 'VALIDUS', role: 'QA Auditor', description: 'Code Review und Testing', color: '#FF6347', capabilities: ['testing', 'qa', 'security', 'review'] },
+        { id: 'mirror', name: 'MIRROR', role: 'Preview Renderer', description: 'Live Preview und Rendering', color: '#00FF00', capabilities: ['preview', 'rendering', 'display'] },
+        { id: 'infra', name: 'INFRA', role: 'Infrastructure', description: 'Config und Deployment', color: '#FFA500', capabilities: ['infrastructure', 'deployment', 'config'] }
+      ];
+      await Agent.insertMany(defaultAgents);
+      console.log('✅ 7 Default Agents erstellt');
+    }
+  } catch (error) {
+    console.error('Agent initialization error:', error);
+  }
+};
+
+// ===== AUTHENTICATION =====
+const authAgent = (req, res, next) => {
+  const token = req.headers['x-agent-token'];
+  if (token !== AGENT_TOKEN) return res.status(403).json({ error: 'Unauthorized' });
+  next();
+};
+
+// ===== HEALTH ENDPOINTS =====
+app.get('/health', (req, res) => res.json({ status: 'ok', db: db ? 'connected' : 'pending', timestamp: new Date().toISOString() }));
+app.get('/ready', (req, res) => res.json({ ready: true, db: !!db }));
+
+// ===== AGENT ENDPOINTS (Studio/Entwickler) =====
+app.get('/api/agents/list', async (req, res) => {
+  try {
+    const agents = await Agent.find().select('id name role color description status');
+    res.json(agents);
+  } catch (error) {
+    console.error('Error fetching agents:', error);
+    res.status(500).json({ error: 'Failed to fetch agents' });
+  }
+});
+
+app.get('/api/agents/status', authAgent, async (req, res) => {
+  try {
+    const agents = await Agent.find({}).select('id name status');
+    res.json({ agents, systemStatus: 'operational', db: 'connected', uptime: process.uptime() });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/agents/task', authAgent, async (req, res) => {
+  try {
+    const { title, description, assignedAgent } = req.body;
+    const task = new Task({ title, description, assignedAgent });
+    await task.save();
+    res.status(201).json(task);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/agents/qwen', authAgent, async (req, res) => {
+  try {
+    if (!process.env.QWEN_API_KEY) return res.status(500).json({ error: 'QWEN_API_KEY not configured' });
+    
+    const response = await axios.post('https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation',
+      { 
+        model: 'qwen-2.5-coder-14b', 
+        input: { messages: [{ role: 'user', content: req.body.message }] }, 
+        parameters: { result_format: 'text' } 
+      },
+      { headers: { 'Authorization': `Bearer ${process.env.QWEN_API_KEY}` } }
+    );
+    
+    res.json({ status: 'success', response: response.data?.output?.text || 'No response' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ===== SESSION ENDPOINTS (Entwickler-Chat-Historie) =====
+app.post('/api/sessions', async (req, res) => {
+  try {
+    const { userId, title } = req.body;
+    const session = new Session({ userId, title });
+    await session.save();
+    res.status(201).json(session);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/sessions/:id', async (req, res) => {
+  try {
+    const session = await Session.findById(req.params.id).populate('messages');
+    if (!session) return res.status(404).json({ error: 'Session not found' });
+    res.json(session);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ===== MESSAGE ENDPOINTS =====
+app.post('/api/messages', async (req, res) => {
+  try {
+    const { sessionId, sender, receiver, content, type } = req.body;
+    const message = new Message({ sessionId, sender, receiver, content, type });
+    await message.save();
+    await Session.findByIdAndUpdate(sessionId, { $push: { messages: message._id } });
+    res.status(201).json(message);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ===== PUBLIC EVENT ENDPOINTS (Community/Öffentlich) =====
+app.get('/api/events', async (req, res) => {
+  try {
+    const now = new Date();
+    const events = await Event.find({ isPublic: true, date: { $gte: now } })
+      .populate('organizerId', 'username email')
+      .sort({ date: 1 })
+      .limit(50);
+    res.json(events);
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    res.status(500).json({ error: 'Failed to fetch events' });
+  }
+});
+
+app.get('/api/events/:id', async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id)
+      .populate('organizerId', 'username email')
+      .populate('attendees', 'username email');
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+    res.json(event);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/events', async (req, res) => {
+  try {
+    const { title, description, organizerId, date, location, category } = req.body;
+    const event = new Event({ title, description, organizerId, date, location, category });
+    await event.save();
+    res.status(201).json(event);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ===== USER ENDPOINTS =====
+app.get('/api/users/:id', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-apiToken');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ===== STATIC FILES & FRONTEND =====
+const frontendPath = path.join(__dirname, '..', 'frontend', 'dist');
+
+if (fs.existsSync(frontendPath)) {
+  app.use(express.static(frontendPath));
+  
+  app.get('*', (req, res) => {
+    const indexPath = path.join(frontendPath, 'index.html');
+    res.sendFile(indexPath);
+  });
+} else {
+  console.error('❌ Frontend build not found at:', frontendPath);
+}
+
+// ===== WEBSOCKET & SERVER =====
+const server = http.createServer(app);
+initializeWebSocket(server);
+
+server.listen(port, host, () => {
+  console.log(`✅ PSY-NEXUS Backend listening on ${host}:${port}`);
+  console.log(`✅ WebSocket enabled`);
+  console.log(`✅ Frontend: ${frontendPath}`);
+  console.log(`✅ MongoDB: ${db ? 'connected' : 'pending'}`);
+});
+
+process.on('unhandledRejection', (reason) => console.error('❌ Unhandled Rejection:', reason));

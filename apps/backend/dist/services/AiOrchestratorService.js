@@ -1,19 +1,20 @@
-import { Logger } from '../utils/logger.js';
+import axios from 'axios';
 export class AiOrchestratorService {
-    static instance;
-    logger = new Logger();
     constructor() {
-        this.logger.info('AiOrchestratorService initialisiert');
+        this.ollamaUrl = process.env.OLLAMA_URL || 'http://ollama:11434';
     }
-    static getInstance() {
-        if (!AiOrchestratorService.instance) {
-            AiOrchestratorService.instance = new AiOrchestratorService();
+    async orchestrate(data) {
+        try {
+            const response = await axios.post(`${this.ollamaUrl}/api/generate`, {
+                model: 'qwen:7b',
+                prompt: data.prompt || 'Hello',
+                stream: false,
+            });
+            return { success: true, response: response.data };
         }
-        return AiOrchestratorService.instance;
-    }
-    async handleUserQuery(prompt, socketId) {
-        this.logger.info(ORCHESTRIERUNG, GESTARTET - Socket, $, { socketId });
-        // TODO: Qwen Integration
-        this.logger.info('ORCHESTRIERUNG ABGESCHLOSSEN');
+        catch (error) {
+            throw new Error('Orchestration failed: ' + error.message);
+        }
     }
 }
+//# sourceMappingURL=AiOrchestratorService.js.map

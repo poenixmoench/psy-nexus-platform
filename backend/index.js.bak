@@ -1,0 +1,46 @@
+const express = require('express');
+const app = express();
+
+app.set('trust proxy', 1);
+
+const port = process.env.PORT || 3001;
+const host = process.env.HOST || '0.0.0.0';
+
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.get('/api/agents/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.get('/ready', (req, res) => {
+    res.status(200).json({ ready: true });
+});
+
+app.listen(port, host, () => {
+    console.log(`✅ PSY-NEXUS Backend listening on ${host}:${port}`);
+    console.log(`✅ Health endpoint: http://localhost:${port}/health`);
+    console.log(`✅ API Health endpoint: http://localhost:${port}/api/agents/health`);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Unhandled Rejection:', reason);
+});
+
+// ===== DEV-WORKSPACE ROUTE (NEU) =====
+app.get('/dev-workspace', (req, res) => {
+  res.status(200).json({ 
+    message: 'Welcome to PSY-NEXUS Dev Workspace',
+    status: 'online',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// ===== STATIC FILES + CATCH-ALL (NEU) =====
+const path = require('path');
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('*', (req, res) => {
+  const frontendPath = path.join(__dirname, '../frontend/dist/index.html');
+  res.status(404).json({ error: 'Route not found', path: req.path });
+});

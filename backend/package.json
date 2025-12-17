@@ -1,0 +1,12 @@
+{
+  "name": "psy-nexus-backend",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "express": "^4.19.2",
+    "mongoose": "^9.0.1",
+    "ws": "^8.18.3"
+  }
+}
