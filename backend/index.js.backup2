@@ -93,9 +93,9 @@ app.get('/api/events/:id', async (req, res) => {
 const agentRouter = require('./routes/agents');
 const authRouter = require('./routes/auth');
 const sessionsRouter = require('./src/routes/sessions');
-app.use('/api/user/sessions', sessionsRouter);
 app.use('/api/agents', agentRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/sessions', sessionsRouter);
 
 const publicPath = path.join(__dirname, 'public');
 console.log('📁 Public path:', publicPath);
