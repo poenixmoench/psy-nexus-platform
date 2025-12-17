@@ -93,7 +93,9 @@ app.get('/api/events/:id', async (req, res) => {
 const agentRouter = require('./routes/agents');
 const authRouter = require('./routes/auth');
 const sessionsRouter = require('./src/routes/sessions');
+const userRouter = require('./src/routes/user');
 app.use('/api/user/sessions', sessionsRouter);
+app.use('/api/user', userRouter);
 app.use('/api/agents', agentRouter);
 app.use('/api/auth', authRouter);
 

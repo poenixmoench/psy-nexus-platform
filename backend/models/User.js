@@ -17,6 +17,19 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  bio: {
+    type: String,
+    default: '',
+  },
+  avatar: {
+    type: String,
+    default: null,
+  },
+  status: {
+    type: String,
+    enum: ['active', 'inactive'],
+    default: 'active',
+  },
   createdAt: {
     type: Date,
     default: Date.now,
