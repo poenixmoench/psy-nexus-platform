@@ -91,7 +91,9 @@ app.get('/api/events/:id', async (req, res) => {
 // ===== STATIC FILES & SPA FALLBACK (LAST!) =====
 // ===== AGENT API ROUTES (BEFORE STATIC) ====="
 const agentRouter = require('./routes/agents');
+const authRouter = require('./routes/auth');
 app.use('/api/agents', agentRouter);
+app.use('/api/auth', authRouter);
 
 const publicPath = path.join(__dirname, 'public');
 console.log('📁 Public path:', publicPath);
