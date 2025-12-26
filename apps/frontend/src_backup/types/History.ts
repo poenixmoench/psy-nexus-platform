@@ -11,7 +11,7 @@ export interface OrchestrationRun {
   agentOutputs?: {
     orchestrator?: string
     developer?: string
-    SecurityAuditAgent?: string
+    reviewer?: string
   }
 }
 

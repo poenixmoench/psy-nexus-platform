@@ -1,16 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import type { RouteRecordRaw } from 'vue-router'
 import AgentDevStudio from '../views/AgentDevStudio.vue'
-import HomeView from '../views/HomeView.vue'
 
-const routes = [
+const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'home',
-    component: HomeView
+    component: AgentDevStudio
   },
   {
-    path: '/dev-workspace',
-    name: 'dev-workspace',
+    path: '/dev-studio',
+    name: 'dev-studio',
     component: AgentDevStudio
   }
 ]

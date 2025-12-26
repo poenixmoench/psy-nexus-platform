@@ -1,13 +1,14 @@
 <template>
-<div id="app-container">
-<router-view />
-</div>
+  <div id="app">
+    <router-view />
+  </div>
 </template>
 
-<script setup>
-// Minimaler Skript-Block
-</script>
-
-<style scoped>
-/* Minimaler Style-Block */
+<style>
+body, html, #app {
+  margin: 0;
+  padding: 0;
+  background: #0f172a;
+  min-height: 100vh;
+}
 </style>

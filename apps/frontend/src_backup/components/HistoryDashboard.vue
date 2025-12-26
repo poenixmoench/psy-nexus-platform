@@ -137,9 +137,9 @@
                 <strong>Entwickler:</strong>
                 <pre class="text-xs bg-gray-100 p-2 rounded overflow-auto">{{ selectedRun.agentOutputs.developer }}</pre>
               </div>
-              <div v-if="selectedRun.agentOutputs.SecurityAuditAgent">
+              <div v-if="selectedRun.agentOutputs.reviewer">
                 <strong>Reviewer:</strong>
-                <pre class="text-xs bg-gray-100 p-2 rounded overflow-auto">{{ selectedRun.agentOutputs.SecurityAuditAgent }}</pre>
+                <pre class="text-xs bg-gray-100 p-2 rounded overflow-auto">{{ selectedRun.agentOutputs.reviewer }}</pre>
               </div>
             </div>
           </div>

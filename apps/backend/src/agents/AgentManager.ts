@@ -1,17 +1,66 @@
-import { EventEmitter } from 'events';
-abstract class BaseAgent extends EventEmitter { name: string; emoji: string; status = 'idle'; constructor(name: string, emoji: string) { super(); this.name = name; this.emoji = emoji; } protected async updateStatus(s: string, d?: any) { this.emit('status', {agent: this.name, emoji: this.emoji, status: s, data: d}); } abstract execute(i: any): Promise<any>; }
-class ProjectOrchestratorAgent extends BaseAgent { private agents = new Map(); constructor() { super('ProjectOrchestrator', '🎼'); } registerAgent(a: BaseAgent) { this.agents.set(a.name, a); } async execute(t: any): Promise<any> { const r = []; for(const task of t) { const a = this.agents.get(task.agentType); if(a) r.push(await a.execute(task.input)); } return {orchestrationComplete: true, results: r}; } }
-class CodeAnalyzerAgent extends BaseAgent { constructor() { super('CodeAnalyzer', '🔍'); } async execute(c: string) { return {issues: [], quality: 90}; } }
-class RefactoringAgent extends BaseAgent { constructor() { super('Refactoring', '♻️'); } async execute(c: string) { return {suggestions: []}; } }
-class TestGeneratorAgent extends BaseAgent { constructor() { super('TestGenerator', '✅'); } async execute(c: string) { return {tests: [], coverage: 85}; } }
-class DocumentationAgent extends BaseAgent { constructor() { super('Documentation', '📚'); } async execute(c: string) { return {documentation: []}; } }
-class SecurityAuditAgent extends BaseAgent { constructor() { super('SecurityAudit', '🔐'); } async execute(c: string) { return {vulnerabilities: []}; } }
-class PerformanceOptimizer extends BaseAgent { constructor() { super('PerformanceOptimizer', '⚡'); } async execute(c: string) { return {optimizations: []}; } }
-class DependencyAuditAgent extends BaseAgent { constructor() { super('DependencyAudit', '📦'); } async execute(p: any) { return {outdated: []}; } }
-class BugDetectorAgent extends BaseAgent { constructor() { super('BugDetector', '🐛'); } async execute(c: string) { return {bugs: []}; } }
-class CodeStyleAgent extends BaseAgent { constructor() { super('CodeStyle', '🎨'); } async execute(c: string) { return {violations: []}; } }
-class CodeReviewAgent extends BaseAgent { constructor() { super('CodeReview', '📋'); } async execute(c: string) { return {rating: 8.5}; } }
-class ArchitectureAnalyzer extends BaseAgent { constructor() { super('ArchitectureAnalyzer', '🏗️'); } async execute(c: any) { return {patternsFound: []}; } }
-class DeploymentAgent extends BaseAgent { constructor() { super('Deployment', '🚀'); } async execute(d: any) { return {platforms: []}; } }
-export class AgentManager { private agents = new Map(); private orchestrator: ProjectOrchestratorAgent; private wsCallback?: (d: any) => void; constructor() { this.orchestrator = new ProjectOrchestratorAgent(); this.registerAgent(this.orchestrator); const all = [new CodeAnalyzerAgent(), new RefactoringAgent(), new TestGeneratorAgent(), new DocumentationAgent(), new SecurityAuditAgent(), new PerformanceOptimizer(), new DependencyAuditAgent(), new BugDetectorAgent(), new CodeStyleAgent(), new CodeReviewAgent(), new ArchitectureAnalyzer(), new DeploymentAgent()]; all.forEach((a) => { this.registerAgent(a); this.orchestrator.registerAgent(a); a.on('status', (d) => { if(this.wsCallback) this.wsCallback(d); }); }); } registerAgent(a: BaseAgent) { this.agents.set(a.name, a); } setWebSocketCallback(c: (d: any) => void) { this.wsCallback = c; } async executeAgent(n: string, i: any): Promise<any> { const a = this.agents.get(n); if(!a) throw new Error("Agent not found: " + n); return await a.execute(i); } async orchestrate(t: any[]) { return await this.orchestrator.execute(t); } listAgents() { return Array.from(this.agents.values()).map((a) => ({name: a.name, emoji: a.emoji, status: a.status})); } }
-export default AgentManager;
+import { pool } from '../services/database';
+import { ROLES } from '../services/AgentConfigs';
+import fs from 'fs';
+import path from 'path';
+
+export class AgentManager {
+    private agents: Map<string, any> = new Map();
+
+    constructor() {
+        this.initialize();
+    }
+
+    private async initialize() {
+        // 1. Rollen aus der Config laden (UIUX Magier, GitHub, etc.)
+        console.log("🔄 Lade Agenten-Rollen aus Config...");
+        for (const [key, role] of Object.entries(ROLES)) {
+            await this.registerInDb(role.name, role.name, role.systemPrompt);
+            this.agents.set(role.name, { ...role, isConfigRole: true });
+        }
+
+        // 2. Instanzen aus dem Ordner laden (NexusPrime, Coder)
+        const agentsDir = path.join(__dirname, 'instances');
+        if (fs.existsSync(agentsDir)) {
+            const files = fs.readdirSync(agentsDir).filter(f => f.endsWith('.js') || f.endsWith('.ts'));
+            for (const file of files) {
+                try {
+                    const agentModule = await import(path.join(agentsDir, file));
+                    const AgentClass = agentModule.default || agentModule[Object.keys(agentModule)[0]];
+                    if (typeof AgentClass === 'function') {
+                        const instance = new AgentClass();
+                        const name = instance.name || file.replace(/\.[^/.]+$/, "");
+                        await this.registerInDb(name, instance.role || 'Agent', instance.systemPrompt || '');
+                        this.agents.set(name, instance);
+                    }
+                } catch (e) { console.error(`Fehler bei ${file}:`, e); }
+            }
+        }
+        console.log(`✅ ${this.agents.size} Agenten insgesamt registriert.`);
+    }
+
+    private async registerInDb(name: string, role: string, prompt: string) {
+        await pool!.query(`
+            INSERT INTO agents (name, role, system_prompt, status)
+            VALUES ($1, $2, $3, 'idle')
+            ON CONFLICT (name) DO UPDATE SET 
+                role = EXCLUDED.role, 
+                system_prompt = EXCLUDED.system_prompt,
+                last_seen = CURRENT_TIMESTAMP
+        `, [name, role, prompt]);
+    }
+
+    public listAgents() {
+        return Array.from(this.agents.values()).map(a => ({
+            name: a.name,
+            role: a.role || a.name,
+            status: 'online'
+        }));
+    }
+
+    public async executeAgent(name: string, input: string) {
+        const agent = this.agents.get(name);
+        if (!agent) throw new Error("Agent nicht gefunden");
+        if (agent.run) return await agent.run(input);
+        return `Rolle ${name} aktiv. Starte Orchestrierung...`;
+    }
+}

@@ -2,48 +2,45 @@ import express from 'express';
 import { createServer } from 'http';
 import cors from 'cors';
 import { WebSocketService } from './websocket/WebSocketService';
-import agentRunRoutes from './routes/agentRunRoutes';
+import historyRoutes from './routes/history-routes';
 
-// Global WS Instance
+// Der fehlende Export für AgentRunService
 export let wsServiceInstance: WebSocketService;
 
 const app = express();
 const server = createServer(app);
 
-// Middleware
-app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173'],
-  credentials: true
-}));
-app.use(express.json({ limit: '10mb' }));
+app.use(cors());
+app.use(express.json());
 
-// WebSocket Service
+// Initialisiere WebSocket vor den Routen
 wsServiceInstance = new WebSocketService(server);
 
-// Routes - MUSS definiert sein!
-if (agentRunRoutes) {
-  app.use('/api/v2/run', agentRunRoutes);
-} else {
-  console.error('❌ agentRunRoutes undefined!');
-}
+// Mount der History-Routen auf Root, da diese intern /api nutzen
+app.use('/', historyRoutes);
 
-// Health Check
 app.get('/health', (req, res) => {
-  res.json({
-    status: 'healthy',
-    wsConnections: wsServiceInstance.getActiveConnections(),
-    timestamp: new Date().toISOString()
+  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+});
+
+// Debug-Funktion zur Routen-Auflistung
+const listRoutes = (stack: any[], parent = '') => {
+  stack.forEach((r: any) => {
+    if (r.route) {
+      console.log(`📍 Route gefunden: ${parent}${r.route.path}`);
+    } else if (r.name === 'router' && r.handle.stack) {
+      let path = r.regexp.source.replace('^\\', '').replace('\\/?(?=\\/|$)', '');
+      listRoutes(r.handle.stack, parent + path);
+    }
   });
-});
+};
 
-// 404 Handler
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
-});
-
-const PORT = process.env.PORT || 3001;
-
+const PORT = 3000;
 server.listen(PORT, () => {
-  console.log(`🚀 Psy-Nexus Server on :${PORT}`);
-  console.log(`🌐 WebSocket: ws://localhost:${PORT}/ws/run?runId=RUN_ID`);
+  console.log(`🚀 Psy-Nexus Server online auf Port ${PORT}`);
+  console.log('--- Registrierte Routen ---');
+  if (app._router && app._router.stack) {
+    listRoutes(app._router.stack);
+  }
+  console.log('---------------------------');
 });
