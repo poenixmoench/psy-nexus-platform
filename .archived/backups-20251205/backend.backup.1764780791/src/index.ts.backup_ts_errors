@@ -1,0 +1,25 @@
+import express from 'express';
+import { connectDB } from './db/connection'; // Stellt sicher, dass connectDB und pool exportiert werden
+import { setupUserTable } from './db/userQueries'; // Importiere die Funktion zum Setup der User-Tabelle
+import { authRoutes } from './routes/authRoutes';
+import { eventRoutes } from './routes/eventRoutes';
+
+const app = express();
+connectDB();
+
+// Rufe setupUserTable nach dem Verbindungsaufbau auf
+// Verwende async/await oder .catch() für Fehlerbehandlung
+setupUserTable().catch(err => {
+  console.error('Failed to setup user table:', err);
+});
+
+app.use(express.json());
+// ... weitere Middleware ...
+
+app.use('/auth', authRoutes);
+app.use('/events', eventRoutes);
+
+const PORT = process.env.PORT || 3000;
+app.listen(Number(PORT), () => {
+    console.log(`Server is running on port ${PORT}`);
+});

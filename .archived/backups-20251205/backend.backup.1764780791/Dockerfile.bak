@@ -1,0 +1,33 @@
+# Stage 1: Build Stage (Verwendet Node 20 für Kompilierung)
+FROM node:20-alpine AS build
+
+WORKDIR /app
+
+# 1. Installiere Dependencies
+COPY package*.json ./
+RUN npm ci
+
+# 2. Kopiere Source Code und kompiliere TypeScript
+COPY . .
+RUN tsc --noEmit
+
+# Stage 2: Production Stage (Minimales Node 20 Runtime Image)
+FROM node:20-alpine
+
+# SICHERHEIT: Non-root User erstellen und wechseln
+RUN apk update && apk add --no-cache shadow
+RUN addgroup -g 10000 -S nodeuser && adduser -u 10000 -S -G nodeuser -s /bin/sh -D nodeuser
+USER nodeuser
+
+WORKDIR /app
+
+# Kopiere nur die benötigten Dateien aus der Build Stage (kompilierter Code & dependencies)
+COPY --from=build --chown=nodeuser:nodeuser /app/dist ./dist
+COPY --from=build --chown=nodeuser:nodeuser /app/node_modules ./node_modules
+COPY --from=build --chown=nodeuser:nodeuser /app/package.json ./package.json
+
+# Expose Port 5000
+EXPOSE 5000
+
+# Startbefehl für den Express Server
+CMD ["node", "dist/server.js"]

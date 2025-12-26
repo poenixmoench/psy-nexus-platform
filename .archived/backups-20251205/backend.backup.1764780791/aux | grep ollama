@@ -1,0 +1,20 @@
+[0;1;32m●[0m ollama.service - Ollama Service
+     Loaded: loaded (]8;;file://psy-nexus-production/etc/systemd/system/ollama.service/etc/systemd/system/ollama.service]8;;; [0;1;32menabled[0m; preset: [0;1;32menabled[0m)
+     Active: [0;1;32mactive (running)[0m since Thu 2025-11-20 00:05:03 UTC; 18h ago
+   Main PID: 906513 (ollama)
+      Tasks: 14 (limit: 18690)
+     Memory: 3.2G (peak: 13.0G swap: 82.4M swap peak: 82.7M)
+        CPU: 9h 36min 14.052s
+     CGroup: /system.slice/ollama.service
+             └─[0;38;5;245m906513 /usr/local/bin/ollama serve[0m
+
+Nov 20 17:45:38 psy-nexus-production ollama[906513]: llama_kv_cache:        CPU KV buffer size =   768.00 MiB
+Nov 20 17:45:38 psy-nexus-production ollama[906513]: llama_kv_cache: size =  768.00 MiB (  4096 cells,  48 layers,  1/1 seqs), K (f16):  384.00 MiB, V (f16):  384.00 MiB
+Nov 20 17:45:38 psy-nexus-production ollama[906513]: llama_context:        CPU compute buffer size =   372.01 MiB
+Nov 20 17:45:38 psy-nexus-production ollama[906513]: llama_context: graph nodes  = 1878
+Nov 20 17:45:38 psy-nexus-production ollama[906513]: llama_context: graph splits = 1
+Nov 20 17:45:39 psy-nexus-production ollama[906513]: time=2025-11-20T17:45:39.001Z level=INFO source=server.go:1310 msg="llama runner started in 12.13 seconds"
+Nov 20 17:45:39 psy-nexus-production ollama[906513]: time=2025-11-20T17:45:39.001Z level=INFO source=sched.go:482 msg="loaded runners" count=1
+Nov 20 17:45:39 psy-nexus-production ollama[906513]: time=2025-11-20T17:45:39.001Z level=INFO source=server.go:1272 msg="waiting for llama runner to start responding"
+Nov 20 17:45:39 psy-nexus-production ollama[906513]: time=2025-11-20T17:45:39.002Z level=INFO source=server.go:1310 msg="llama runner started in 12.13 seconds"
+Nov 20 17:59:36 psy-nexus-production ollama[906513]: [GIN] 2025/11/20 - 17:59:36 | 200 |        14m10s |       127.0.0.1 | POST     "/api/chat"
