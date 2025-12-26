@@ -1,76 +1,44 @@
 import LiveRunService from './LiveRunService';
-import { runCommand } from './ShellService';
 import { askAI } from './AIService';
-import { ProjectContextService } from './ProjectContextService';
-import { MemoryService } from './MemoryService';
 import { ROLES } from './AgentConfigs';
-import fs from 'fs';
-import path from 'path';
+import { MemoryService } from './MemoryService';
 
-export const pendingApprovals = new Map<string, (approved: boolean) => void>();
+export const pendingApprovals = new Map<string, (data: any) => void>();
 
 export class AgentOrchestrator {
   static async execute(task: string, runId: string): Promise<void> {
-    await MemoryService.init();
-    const logAndStream = (content: string, type: string = 'stream') => {
-      LiveRunService.broadcast({ type: 'stream_chunk', content: `\n[${type.toUpperCase()}]: ${content}` });
+    const broadcast = (content: string, type = 'architect') => {
+      LiveRunService.broadcast({ type: 'stream_chunk', content: `\n[${type.toUpperCase()}]: ${content}`, runId });
     };
 
-    // 1. RELEVANTES WISSEN ABRUFEN
-    const history = await MemoryService.search(task);
-    const memoryContext = history.length > 0 ? `ERINNERUNG AN FRÜHERE TASKS:\n${history.join('\n')}` : "";
-
-    const projectContext = await ProjectContextService.getContext(process.cwd());
-
-    // 2. ARCHITEKT (PLANUNG)
-    const planPrompt = `${ROLES.architect.systemPrompt}\n${memoryContext}\nAufgabe: ${task}\nErstelle Plan: [[PLAN: ...]]`;
-    const planResponse = await askAI(planPrompt, "Architektur");
-    const plan = planResponse.match(/\[\[PLAN: ([\s\S]*?)\]\]/)?.[1] || "Direkt ausführen.";
+    // PHASE 1: ARCHITEKT FRAGT
+    broadcast("Analysiere Vision... Erstelle Gegenfragen.", "architect");
+    const archResponse = await askAI(`${ROLES.architect.systemPrompt}\n\nUSER: ${task}`, "architect");
     
-    // Plan im Langzeitgedächtnis speichern
-    await MemoryService.store(`Plan für "${task}": ${plan}`, { type: 'plan', runId });
+    // PHASE 2: INTERAKTIONS-STOPP AUF DEV-WORKSPACE
+    LiveRunService.broadcast({
+      type: 'interaction_required',
+      runId,
+      subType: 'questions',
+      content: archResponse,
+      options: [
+        { label: "Direkt umsetzen", prompt: "Verstanden, starte direkt.", icon: "🚀" },
+        { label: "Details klären", prompt: "Ich beantworte deine Fragen...", icon: "📝" },
+        { label: "Anderer Ansatz", prompt: "Neuer Plan: ", icon: "💡" },
+        { label: "Security First", prompt: "Fokus auf Sicherheit.", icon: "🔒" },
+        { label: "Abbrechen", prompt: "Stop.", icon: "🛑" }
+      ]
+    });
 
-    LiveRunService.broadcast({ type: 'confirm_plan', actionId: runId, plan });
-    if (!(await new Promise<boolean>(res => pendingApprovals.set(runId, res)))) return;
+    // Warten auf User-Eingabe (Promise wird über API/WS gelöst)
+    const developerInput = await new Promise<any>((resolve) => {
+      pendingApprovals.set(runId, resolve);
+    });
 
-    // 3. EXECUTION LOOP
-    let lastObservation = `Start. Plan: ${plan}`;
-    let iteration = 0;
-
-    while (iteration < 15) {
-      iteration++;
-      
-      // Wissen aus der aktuellen Sitzung abrufen
-      const currentMemory = await MemoryService.search(lastObservation);
-      
-      const devPrompt = `Rolle: ${ROLES.developer.systemPrompt}\nAufgabe: ${task}\nWissen: ${currentMemory.join('\n')}\nStatus: ${lastObservation}`;
-      const devResponse = await askAI(devPrompt, `Dev Iter ${iteration}`);
-
-      // WRITE-LOGIK (mit Review & Memory-Update)
-      const writeMatch = devResponse.match(/\[\[WRITE: (.*?) \| ([\s\S]*?)\]\]/);
-      if (writeMatch) {
-        const [_, filePath, newContent] = writeMatch;
-        const reviewPrompt = `${ROLES.reviewer.systemPrompt}\nCheck: ${newContent}`;
-        const reviewResponse = await askAI(reviewPrompt, "Review");
-
-        if (reviewResponse.includes('[[APPROVED]]')) {
-          LiveRunService.broadcast({ type: 'confirm_file_write', actionId: runId, file: filePath, newContent });
-          if (await new Promise<boolean>(res => pendingApprovals.set(runId, res))) {
-            fs.writeFileSync(path.join(process.cwd(), filePath), newContent);
-            await MemoryService.store(`Datei ${filePath} wurde geändert. Inhalt: ${newContent.substring(0, 100)}...`, { file: filePath });
-            lastObservation = `Erfolg: ${filePath} geschrieben.`;
-          }
-        } else {
-          lastObservation = `Review-Korrektur: ${reviewResponse}`;
-          continue;
-        }
-      }
-
-      if (devResponse.includes('[[DONE]]')) {
-        await MemoryService.store(`Task abgeschlossen: ${task}`, { status: 'success' });
-        break;
-      }
-    }
-    logAndStream("Task mit Long-Term Memory abgeschlossen.", "success");
+    // PHASE 3: SPEICHERUNG DER CO-KREATION & UMSETZUNG
+    await MemoryService.save(`Entscheidung für Task ${runId}: ${developerInput.prompt}`);
+    broadcast("Input erhalten. Starte Umsetzung...", "developer");
+    
+    // Hier folgt die iterative Schleife der restlichen 7 Agenten...
   }
 }
