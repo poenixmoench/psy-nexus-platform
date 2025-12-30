@@ -48,8 +48,7 @@
             </div>
           </div>
           <div class="msg-text">{{ msg.text }}</div>
-        </div>
-
+        </div> 
         <div v-if="streamingAgent === activeAgent" class="message agent streaming">
           <div class="msg-header">
             <span class="msg-agent">{{ streamingAgent }}</span>
@@ -74,15 +73,21 @@
         <div v-if="livePreview" v-html="livePreview" class="preview-content"></div>
         <div v-else class="preview-empty"><span class="text-muted">Keine Vorschau verfügbar</span></div>
       </div>
-    </section>
-  </div>
+    </section>   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick, watch, computed } from 'vue'
 import { io } from 'socket.io-client'
 
-const socket = io('https://psy-nexus.live', { path: '/socket.io/', transports: ['websocket'] })
+// ✅ FIXED: Socket URL für Production
+const socket = io(location.origin, { 
+  path: '/socket.io/', 
+  reconnection: true,
+  reconnectionDelay: 1000,
+  reconnectionAttempts: 5
+})
+
 const agents = ref<any>({})
 const activeAgent = ref('ORION')
 const userInput = ref('')
@@ -99,8 +104,7 @@ const agentNames = computed(() => Object.keys(agents.value || {}))
 const nodeX = (index: number): number => {
   const angle = (index / 7) * Math.PI * 2 - Math.PI / 2
   return 150 + 80 * Math.cos(angle)
-}
-
+} 
 const nodeY = (index: number): number => {
   const angle = (index / 7) * Math.PI * 2 - Math.PI / 2
   return 150 + 80 * Math.sin(angle)
@@ -125,8 +129,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
   if (e.ctrlKey && e.key === 'c') {
     const messages = agents.value[activeAgent.value]?.history || []
     const lastAgentMsg = [...messages].reverse().find((m: any) => m.agent && m.agent !== 'NUTZER')
-    if (lastAgentMsg?.text) {
-      e.preventDefault()
+    if (lastAgentMsg?.text) {       e.preventDefault()
       navigator.clipboard.writeText(lastAgentMsg.text)
       console.log('✅ Letzte Nachricht kopiert (Ctrl+C)!')
     }
@@ -147,7 +150,16 @@ watch(streamingText, () => {
 
 onMounted(() => {
   socket.on('init-agents', (data) => {
+    console.log('✅ Agenten initialisiert:', Object.keys(data.agents || {}))
     agents.value = data.agents || {}
+  })
+
+  socket.on('connect', () => {
+    console.log('🔌 WebSocket verbunden!')
+  })
+
+  socket.on('disconnect', () => {
+    console.log('🔌 WebSocket getrennt!')
   })
 
   socket.on('agent-partial', (data) => {
@@ -176,8 +188,7 @@ onMounted(() => {
 
       if (agents.value[streamingAgent.value]) {
         agents.value[streamingAgent.value].history = agents.value[streamingAgent.value].history || []
-        agents.value[streamingAgent.value].history.push({
-          agent: streamingAgent.value,
+        agents.value[streamingAgent.value].history.push({           agent: streamingAgent.value,
           text: streamingText.value,
           type: 'agent'
         })
@@ -211,11 +222,11 @@ onMounted(() => {
 .status-indicator.idle { background: #444; }
 .status-indicator.processing { background: #ffaa00; }
 .status-indicator.completed { background: #00ff9d; }
-.pulse-ring { position: absolute; width: 12px; height: 12px; border: 1px solid #ffaa00; border-radius: 50%; animation: pulse 1.5s ease-out infinite; }
+.pulse-ring { position: absolute; width: 12px; height: 12px; border: 1px solid #ffaa00; border-radius: 50%; animation: pulse 1.5s infinite; }
 @keyframes pulse { 0% { width: 12px; height: 12px; opacity: 1; } 100% { width: 20px; height: 20px; opacity: 0; } }
 .card-body { font-size: 0.75em; color: #888; line-height: 1.4; }
 .chat-section { display: flex; flex-direction: column; background: #050505; border-right: 1px solid #1a1a1a; overflow: hidden; }
-.neural-map-container { height: 250px; background: radial-gradient(circle at center, #0a0a0a 0%, #000 100%); border-bottom: 1px solid #1a1a1a; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.neural-map-container { height: 250px; background: radial-gradient(circle at center, #0a0a0a 0%, #000 100%); border-bottom: 1px solid #1a1a1a; display: flex; align-items: center; justify-content: center; }
 .neural-map { width: 100%; height: 100%; max-width: 300px; max-height: 300px; }
 .pulsing-rings .ring { fill: none; stroke: #00ff9d; opacity: 0.3; stroke-width: 1; }
 .pulsing-rings .ring.pulse { animation: ring-pulse 3s infinite ease-out; }
@@ -237,7 +248,7 @@ onMounted(() => {
 .messages-area::-webkit-scrollbar { width: 6px; }
 .messages-area::-webkit-scrollbar-track { background: #0a0a0a; }
 .messages-area::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-.message { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-left: 2px solid; border-radius: 2px; max-width: 90%; }
+.message { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-left: 2px solid; border-radius: 2px; max-width: 100%; word-wrap: break-word; }
 .message.user { align-self: flex-end; border-left-color: #009dff; background: rgba(0, 157, 255, 0.05); color: #009dff; }
 .message.agent { align-self: flex-start; border-left-color: #00ff9d; background: rgba(0, 255, 157, 0.05); color: #00ff9d; }
 .message.streaming { font-style: italic; }
@@ -252,10 +263,10 @@ onMounted(() => {
 .btn-copy:hover, .btn-delete:hover { opacity: 0.8; box-shadow: 0 0 6px currentColor; }
 .btn-copy:active, .btn-delete:active { transform: scale(0.95); }
 .input-zone { display: flex; gap: 8px; padding: 12px; border-top: 1px solid #1a1a1a; background: #0a0a0a; }
-.system-input { flex: 1; background: #080808; border: 1px solid #1a1a1a; color: #00ff9d; padding: 10px; font-family: 'Ubuntu Mono', monospace; font-size: 0.9em; border-radius: 2px; transition: all 0.2s; }
+.system-input { flex: 1; background: #080808; border: 1px solid #1a1a1a; color: #00ff9d; padding: 10px; font-family: 'Ubuntu Mono', monospace; font-size: 0.85em; }
 .system-input:focus { outline: none; border-color: #00ff9d; box-shadow: inset 0 0 8px rgba(0, 255, 157, 0.1); }
 .system-input::placeholder { color: #444; opacity: 0.7; }
-.btn-execute { padding: 10px 16px; background: #00ff9d; color: #000; border: none; border-radius: 2px; cursor: pointer; font-weight: bold; font-family: 'Ubuntu Mono', monospace; font-size: 0.9em; transition: all 0.2s; text-transform: uppercase; letter-spacing: 1px; }
+.btn-execute { padding: 10px 16px; background: #00ff9d; color: #000; border: none; border-radius: 2px; cursor: pointer; font-weight: bold; transition: all 0.2s; white-space: nowrap; }
 .btn-execute:hover { background: #00ff41; box-shadow: 0 0 12px rgba(0, 255, 157, 0.4); }
 .btn-execute:active { transform: scale(0.98); }
 .stats-section { background: #0a0a0a; border-left: 1px solid #1a1a1a; display: flex; flex-direction: column; overflow: hidden; }
