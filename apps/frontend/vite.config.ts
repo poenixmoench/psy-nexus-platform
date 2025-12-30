@@ -1,23 +1,29 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import path from 'path'
+import { resolve } from 'path'
 
 export default defineConfig({
-  base: '/',
-  base: '/',
   plugins: [vue()],
-  server: {
-    port: 5176,
-    host: '0.0.0.0',
-    hmr: {
-      host: '157.180.31.27',
-      port: 5176,
-      protocol: 'http'
-    }
-  },
+  base: '/',
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
+      '@': resolve(__dirname, 'src')
+    }
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: undefined
+      }
+    }
+  },
+  server: {
+    port: 3000,
+    proxy: {
+      '/socket.io': {
+        target: 'http://localhost:3001',
+        ws: true
+      }
+    }
+  }
 })

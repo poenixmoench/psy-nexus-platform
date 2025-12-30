@@ -1,9 +1,9 @@
 import { Router } from 'express';
+import { AgentController } from '../controllers/AgentController';
 
 const router = Router();
 
-router.get('/', (req, res) => {
-  res.json({ message: 'Agent Routes OK' });
-});
+router.get('/', AgentController.getAllAgents);
+router.get('/:id', AgentController.getAgentStatus);
 
 export default router;

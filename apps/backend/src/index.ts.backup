@@ -1,24 +1,11 @@
-import express, { Request, Response } from 'express';
-import cors from 'cors';
-import streamingRoutes from './routes/streamingRoutes';
+import dotenv from 'dotenv';
+import path from 'path';
 
-const app = express();
-const port = process.env.PORT || 3000;
+// Lade .env bevor irgendetwas anderes passiert
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+console.log('--- Environment Check ---');
+console.log('DB_URL vorhanden:', !!process.env.DATABASE_URL);
+console.log('-------------------------');
 
-app.get('/', (req: Request, res: Response) => {
-  res.json({ status: 'PSY-NEXUS Backend API is running!', timestamp: new Date().toISOString(), version: '8.0.0' });
-});
-
-app.use('/api', streamingRoutes);
-
-app.use((req: Request, res: Response) => {
-  res.status(404).json({ error: 'Not Found', path: req.path, method: req.method });
-});
-
-app.listen(port, () => {
-  console.log(`✅ Server running on port ${port}`);
-});
+require('./server');

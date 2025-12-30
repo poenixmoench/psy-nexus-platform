@@ -1,30 +1,38 @@
 import axios from 'axios';
 
-export const askAI = async (prompt: string, context?: string): Promise<string> => {
-    const API_URL = process.env.AI_API_URL || 'https://api.openai.com/v1/chat/completions';
-    const API_KEY = process.env.AI_API_KEY || 'DEIN_API_KEY';
+export class AIService {
+  private static readonly OLLAMA_URL = 'http://localhost:11434';
+  private static readonly MODEL = 'qwen2.5-coder:14b';
 
-    const systemPrompt = `
-    Du bist ein Senior Entwickler-Agent. Du arbeitest im AgentDevStudio.
-    Antworte NUR in diesem Format für Aktionen:
-    [[SHELL: befehl]] - Um einen Befehl auszuführen
-    [[WRITE: dateipfad | inhalt]] - Um Code zu schreiben
-    [[PLAN: beschreibung]] - Um deinen Denkprozess zu teilen
+  static async askAI(prompt: string): Promise<string> {
+    try {
+      console.log("🤖 AIService: Calling Qwen (timeout: 300s)...");
+      
+      const response = await axios.post(
+        `${this.OLLAMA_URL}/api/generate`,
+        {
+          model: this.MODEL,
+          prompt: prompt,
+          stream: false,
+          temperature: 0.7,
+        },
+        { 
+          timeout: 300000, // 5 minutes for Qwen to respond
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
 
-    Wenn du fertig bist, antworte mit [[DONE]].
-    Kontext: ${context || 'Kein Kontext verfügbar'}
-  `;
+      const result = response.data.response;
+      console.log("✅ Qwen Response received:", result.substring(0, 100) + "...");
+      return result;
+    } catch (error: any) {
+      console.error("❌ AIService Error:", error.message);
+      if (error.code === 'ECONNREFUSED') {
+        console.error("   → Ollama not running on localhost:11434");
+      }
+      throw error;
+    }
+  }
+}
 
-    const response = await axios.post(API_URL, {
-        model: 'gpt-4o',
-        messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: prompt }
-        ],
-        temperature: 0.2
-    }, {
-        headers: { 'Authorization': `Bearer ${API_KEY}` }
-    });
-
-    return response.data.choices[0].message.content;
-};
+export const askAI = AIService.askAI.bind(AIService);

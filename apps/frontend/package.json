@@ -1,9 +1,10 @@
 {
   "name": "psy-nexus-frontend",
+  "type": "module",
   "version": "1.0.0",
-  "description": "Frontend service for Psy Nexus",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "start": "npm run dev",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
@@ -17,14 +18,13 @@
     "lodash.debounce": "^4.0.8",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "vue": "^3.5.25",
-    "vue-router": "^4.6.3"
+    "socket.io-client": "^4.8.3",
+    "vue": "^3.5.12",
+    "vue-router": "^4.6.4"
   },
   "devDependencies": {
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "@vitejs/plugin-vue": "^5.2.4",
-    "typescript": "^5.9.3",
-    "vite": "^5.4.21"
+    "@vitejs/plugin-vue": "^6.0.3",
+    "terser": "^5.44.1",
+    "vite": "^7.3.0"
   }
 }

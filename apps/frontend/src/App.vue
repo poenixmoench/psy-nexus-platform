@@ -1,14 +1,19 @@
 <template>
-  <div id="app">
-    <router-view />
-  </div>
+  <router-view />
 </template>
 
+<script setup lang="ts">
+</script>
+
 <style>
-body, html, #app {
+* {
   margin: 0;
   padding: 0;
-  background: #0f172a;
-  min-height: 100vh;
+  box-sizing: border-box;
+}
+html, body, #app {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 </style>
