@@ -1,0 +1,1 @@
+bash: /root/deep_stash_analysis.sh: No such file or directory
