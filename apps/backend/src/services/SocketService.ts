@@ -1,10 +1,13 @@
 import { Server } from 'socket.io';
 
 export class SocketService {
-  private static io: Server;
+  private static io: any;
 
-  static init(io: Server) {
-    SocketService.io = io;
+  static init(httpServer: any) {
+    SocketService.io = new Server(httpServer, {
+      cors: { origin: '*' }
+    });
+    
     SocketService.io.on('connection', (socket: any) => {
       console.log('🔌 Client connected:', socket.id);
       socket.on('disconnect', () => {
