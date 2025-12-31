@@ -216,3 +216,24 @@ onMounted(async () => {
 
   window.addEventListener('keydown', handleKeyDown)
 })
+        clearInterval(typewriterInterval)
+        typewriterInterval = null
+      }
+
+      if (agents.value[streamingAgent.value]) {
+        agents.value[streamingAgent.value].history = agents.value[streamingAgent.value].history || []
+        agents.value[streamingAgent.value].history.push({
+          agent: streamingAgent.value,
+          text: streamingText.value,
+          type: 'agent'
+        })
+      }
+
+      streamingAgent.value = ''
+      streamingText.value = ''
+      targetText.value = ''
+    }
+  })
+
+  window.addEventListener('keydown', handleKeyDown)
+})
