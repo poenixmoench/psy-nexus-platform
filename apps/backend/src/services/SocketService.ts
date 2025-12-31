@@ -1,16 +1,19 @@
 import { Server } from 'socket.io';
 
 export class SocketService {
-  private io: Server;
+  private static io: Server;
 
-  constructor(io: Server) {
-    this.io = io;
+  static init(io: Server) {
+    SocketService.io = io;
+    SocketService.io.on('connection', (socket: any) => {
+      console.log('🔌 Client connected:', socket.id);
+      socket.on('disconnect', () => {
+        console.log('🔌 Client disconnected:', socket.id);
+      });
+    });
   }
 
-  handleConnection(socket: any) {
-    console.log('Client connected:', socket.id);
-    socket.on('disconnect', () => {
-      console.log('Client disconnected:', socket.id);
-    });
+  static getIO() {
+    return SocketService.io;
   }
 }
