@@ -81,7 +81,7 @@ import { ref, onMounted, nextTick, watch, computed } from 'vue'
 import { io } from 'socket.io-client'
 
 // ✅ FIXED: Socket URL für Production
-const socket = io(location.origin, { 
+const socket = io('https://api.psy-nexus.live', { 
   path: '/socket.io/', 
   reconnection: true,
   reconnectionDelay: 1000,
