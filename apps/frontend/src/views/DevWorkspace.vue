@@ -149,7 +149,12 @@ watch(streamingText, () => {
 })
 
 onMounted(async () => {
-  window.socket = socket  // 🔌 Make socket global for console
+  // Make variables global for console debugging
+  window.socket = socket
+  window.activeAgent = activeAgent
+  window.agents = agents
+  window.userInput = userInput
+  window.send = send
   console.log('🔌 Socket gemacht global:', socket)
   console.log('🔄 DevWorkspace mounted - loading agents...')
 
