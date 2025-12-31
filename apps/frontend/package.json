@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "npx http-server dist --spa -p 3000"
+    "start": "npx serve -s dist -l 3000"
   },
   "keywords": [],
   "author": "",
