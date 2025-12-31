@@ -149,6 +149,8 @@ watch(streamingText, () => {
 })
 
 onMounted(async () => {
+  window.socket = socket  // 🔌 Make socket global for console
+  console.log('🔌 Socket gemacht global:', socket)
   console.log('🔄 DevWorkspace mounted - loading agents...')
 
   // 1️⃣ Lade Agenten SOFORT via REST API (FALLBACK)
