@@ -1,13 +1,13 @@
 import axios from 'axios';
 
 export class AIService {
-  private static readonly OLLAMA_URL = 'http://localhost:11434';
+  private static readonly OLLAMA_URL = 'http://127.0.0.1:11434';
   private static readonly MODEL = 'qwen2.5-coder:14b';
 
   static async askAI(prompt: string): Promise<string> {
     try {
       console.log("🤖 AIService: Calling Qwen (timeout: 300s)...");
-      
+
       const response = await axios.post(
         `${this.OLLAMA_URL}/api/generate`,
         {
@@ -16,8 +16,8 @@ export class AIService {
           stream: false,
           temperature: 0.7,
         },
-        { 
-          timeout: 300000, // 5 minutes for Qwen to respond
+        {
+          timeout: 300000,
           headers: { 'Content-Type': 'application/json' }
         }
       );
@@ -27,8 +27,8 @@ export class AIService {
       return result;
     } catch (error: any) {
       console.error("❌ AIService Error:", error.message);
-      if (error.code === 'ECONNREFUSED') {
-        console.error("   → Ollama not running on localhost:11434");
+      if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+        console.error("   → Ollama not running on 127.0.0.1:11434");
       }
       throw error;
     }

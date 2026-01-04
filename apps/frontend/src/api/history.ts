@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://api.psy-nexus.live'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
 export async function getHistory() {
   const res = await fetch(`${API_BASE}/history`)

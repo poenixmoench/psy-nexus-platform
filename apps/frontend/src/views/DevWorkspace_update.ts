@@ -3,7 +3,7 @@ onMounted(async () => {
 
   // 1️⃣ Lade Agenten SOFORT via REST API
   try {
-    const response = await fetch('https://api.psy-nexus.live/agents')
+    const response = await fetch('/api/agents')
     const data = await response.json()
     console.log('✅ Agenten geladen via REST:', Object.keys(data.agents || {}))
     agents.value = data.agents || {}

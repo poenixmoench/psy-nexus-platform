@@ -5,7 +5,7 @@ onMounted(async () => {
   
   // Lade Agenten direkt via REST API als Fallback
   try {
-    const response = await fetch('https://api.psy-nexus.live/agents')
+    const response = await fetch('/api/agents')
     const data = await response.json()
     console.log('✅ Agenten geladen via REST:', Object.keys(data.agents || {}))
     agents.value = data.agents || {}

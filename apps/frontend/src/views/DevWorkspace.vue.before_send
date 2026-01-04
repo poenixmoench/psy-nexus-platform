@@ -139,32 +139,10 @@ const handleKeyDown = (e: KeyboardEvent) => {
 
 const send = () => {
   if (!userInput.value.trim()) return
-  const msgText = userInput.value
-  const currentAgent = activeAgent.value
-
-  // 1️⃣ Sofort lokal in history pushen - BEVOR Backend antwortet
-  if (agents.value[currentAgent]) {
-    if (!agents.value[currentAgent].history) agents.value[currentAgent].history = []
-    agents.value[currentAgent].history.push({
-      agent: "NUTZER",
-      text: msgText,
-      type: "user"
-    })
-  }
-
-  // 2️⃣ Sende zu Backend
-  socket.emit("agent-message", {
-    agentName: currentAgent,
-    message: msgText
-  })
-
-  userInput.value = ""
-
-  // 3️⃣ Auto-scroll
-  nextTick(() => {
-    if (msgBox.value) msgBox.value.scrollTop = msgBox.value.scrollHeight
-  })
+  socket.emit('agent-message', { agentName: activeAgent.value, message: userInput.value })
+  userInput.value = ''
 }
+
 watch(streamingText, () => {
   nextTick(() => {
     if (msgBox.value) msgBox.value.scrollTop = msgBox.value.scrollHeight
@@ -222,7 +200,6 @@ onMounted(async () => {
   })
 
   socket.on('connect', () => {
-  socket.onAny((event, ...args) => { console.log('🕵️ JEDES EVENT:', event, args) })
     console.log('🔌 WebSocket verbunden!')
   })
 

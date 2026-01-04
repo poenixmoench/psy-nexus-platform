@@ -81,9 +81,8 @@ import { ref, onMounted, nextTick, watch, computed } from 'vue'
 import { io } from 'socket.io-client'
 
 // ✅ FIXED: Socket URL für Production
-const socket = io('https://api.psy-nexus.live', {
-  path: '/socket.io/',
-  transports: ['websocket'],
+const socket = io('/api', { 
+  path: '/socket.io/', 
   reconnection: true,
   reconnectionDelay: 1000,
   reconnectionAttempts: 5
@@ -139,32 +138,10 @@ const handleKeyDown = (e: KeyboardEvent) => {
 
 const send = () => {
   if (!userInput.value.trim()) return
-  const msgText = userInput.value
-  const currentAgent = activeAgent.value
-
-  // 1️⃣ Sofort lokal in history pushen - BEVOR Backend antwortet
-  if (agents.value[currentAgent]) {
-    if (!agents.value[currentAgent].history) agents.value[currentAgent].history = []
-    agents.value[currentAgent].history.push({
-      agent: "NUTZER",
-      text: msgText,
-      type: "user"
-    })
-  }
-
-  // 2️⃣ Sende zu Backend
-  socket.emit("agent-message", {
-    agentName: currentAgent,
-    message: msgText
-  })
-
-  userInput.value = ""
-
-  // 3️⃣ Auto-scroll
-  nextTick(() => {
-    if (msgBox.value) msgBox.value.scrollTop = msgBox.value.scrollHeight
-  })
+  socket.emit('agent-message', { agentName: activeAgent.value, message: userInput.value })
+  userInput.value = ''
 }
+
 watch(streamingText, () => {
   nextTick(() => {
     if (msgBox.value) msgBox.value.scrollTop = msgBox.value.scrollHeight
@@ -180,29 +157,13 @@ onMounted(async () => {
   window.send = send
   console.log('🔌 Socket gemacht global:', socket)
   console.log('🔄 DevWorkspace mounted - loading agents...')
+
   // 1️⃣ Lade Agenten SOFORT via REST API (FALLBACK)
   try {
-    const response = await fetch('https://api.psy-nexus.live/api/agents')
+    const response = await fetch('/api/agents')
     const data = await response.json()
-
-    // Handle both: Array from API or Object from WebSocket
-    const agentsObj: any = {}
-    if (Array.isArray(data)) {
-      // API sendet Array -> convert to Object mit defaults
-      data.forEach((agent: any) => {
-        agentsObj[agent.name] = {
-          role: agent.role,
-          status: 'idle',
-          history: []
-        }
-      })
-      console.log('✅ Agenten geladen via REST (Array):', Object.keys(agentsObj))
-    } else if (data.agents) {
-      // WebSocket sendet mit agents property
-      console.log('✅ Agenten geladen via REST (Object):', Object.keys(data.agents || {}))
-      Object.assign(agentsObj, data.agents)
-    }
-    agents.value = agentsObj
+    console.log('✅ Agenten geladen via REST:', Object.keys(data.agents || {}))
+    agents.value = data.agents || {}
   } catch (err) {
     console.error('❌ REST Fehler:', err)
   }
@@ -210,19 +171,10 @@ onMounted(async () => {
   // 2️⃣ WebSocket Listener für Live Updates
   socket.on('init-agents', (data) => {
     console.log('✅ Agenten via WebSocket:', Object.keys(data.agents || {}))
-    const agentsObj: any = {}
-    if (Array.isArray(data)) {
-      data.forEach((agent: any) => {
-        agentsObj[agent.name] = { role: agent.role, status: 'idle', history: [] }
-      })
-    } else if (data.agents) {
-      Object.assign(agentsObj, data.agents)
-    }
-    agents.value = agentsObj
+    agents.value = data.agents || {}
   })
 
   socket.on('connect', () => {
-  socket.onAny((event, ...args) => { console.log('🕵️ JEDES EVENT:', event, args) })
     console.log('🔌 WebSocket verbunden!')
   })
 
@@ -231,9 +183,13 @@ onMounted(async () => {
   })
 
   socket.on('agent-partial', (data) => {
-    if (data.agentName === activeAgent.value) {
+    if (data.agent === activeAgent.value) {
       streamingAgent.value = data.agent
       targetText.value = data.partial
+      // ✨ HTML-Preview: Wenn Agent Code schreibt, zeige es rechts
+      if (data.partial.includes("<") && (data.partial.includes(">") || data.partial.includes("{"))) {
+        livePreview.value = data.partial
+      }
 
       if (!typewriterInterval) {
         typewriterInterval = setInterval(() => {
@@ -245,20 +201,6 @@ onMounted(async () => {
     }
   })
 
-
-  socket.on('agent-message', (data) => {
-    console.log('💬 User message received:', data)
-    if (data.agentName === activeAgent.value) {
-      if (agents.value[activeAgent.value]) {
-        agents.value[activeAgent.value].history = agents.value[activeAgent.value].history || []
-        agents.value[activeAgent.value].history.push({
-          agent: 'NUTZER',
-          text: data.message,
-          type: 'user'
-        })
-      }
-    }
-  })
   socket.on('state-update', (data) => {
     agents.value = data.agents || {}
 
@@ -357,7 +299,7 @@ onMounted(async () => {
 .preview-box::-webkit-scrollbar { width: 6px; }
 .preview-box::-webkit-scrollbar-track { background: #0a0a0a; }
 .preview-box::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-.preview-content { font-size: 0.9em; line-height: 1.6; color: #888; word-wrap: break-word; }
+.preview-content { font-size: 0.9em; line-height: 1.6; color: #000; background: #fff; padding: 16px; word-wrap: break-word; overflow: auto; }
 .preview-empty { display: flex; align-items: center; justify-content: center; height: 100%; color: #444; font-style: italic; }
 .text-muted { opacity: 0.5; }
 </style>

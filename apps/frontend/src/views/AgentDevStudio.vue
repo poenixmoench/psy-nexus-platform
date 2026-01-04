@@ -87,7 +87,7 @@ const scrollToBottom = () => {
 }
 
 onMounted(() => {
-  socket = io('/')
+  socket = io('wss://psy-nexus.live', {transports:["websocket"],upgrade:false})
   socket.on('orion-response', (data: any) => {
     interference.value = "ANALYSING FRAGMENTS..."
     setTimeout(() => {

@@ -1,0 +1,42 @@
+// Laden der Agenten beim Mount
+onMounted(async () => {
+  try {
+    const res = await fetch('/api/agents')
+    const data = await res.json()
+    
+    // Konvertiere Array zu Object mit Namen als Keys
+    agents.value = {}
+    data.forEach((agent: any) => {
+      agents.value[agent.name] = {
+        name: agent.name,
+        role: agent.role,
+        status: 'idle',
+        history: []
+      }
+    })
+    
+    // Setze ersten Agenten als aktiv
+    activeAgent.value = data[0]?.name || 'ORION'
+    
+    console.log('✅ Agents loaded:', agents.value)
+    console.log('🔌 WebSocket verbunden!')
+  } catch (e) {
+    console.error('❌ Error loading agents:', e)
+  }
+
+  // Socket Listener
+  socket.on('agent-message', (data: any) => {
+    console.log('📨 Agent message:', data)
+    if (agents.value[data.agent]) {
+      agents.value[data.agent].history.push({
+        agent: data.agent,
+        text: data.text,
+        type: 'agent'
+      })
+    }
+  })
+
+  socket.on('connect', () => {
+    console.log('🔌 WebSocket verbunden!')
+  })
+})
