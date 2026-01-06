@@ -13,7 +13,7 @@ export class MemoryService {
 
   static init(dbPool: Pool) {
     this.pool = dbPool;
-    console.log('✅ MemoryService initialized with PostgreSQL');
+    console.log(' [OK]  MemoryService initialized with PostgreSQL');
   }
 
   static async createSession(agentId: string, sessionId?: string): Promise<string> {
@@ -29,7 +29,7 @@ export class MemoryService {
       console.log(`📝 Session created: ${id}`);
       return id;
     } catch (error: any) {
-      console.error('❌ Error creating session:', error.message);
+      console.error(' [ERR]  Error creating session:', error.message);
       throw error;
     }
   }
@@ -43,9 +43,9 @@ export class MemoryService {
     `;
     try {
       await this.pool.query(query, [sessionId, role, content, tokensUsed]);
-      console.log(`💬 Message saved: ${role} (${sessionId})`);
+      console.log(` [DIALOG]  Message saved: ${role} (${sessionId})`);
     } catch (error: any) {
-      console.error('❌ Error saving message:', error.message);
+      console.error(' [ERR]  Error saving message:', error.message);
     }
   }
 
@@ -60,7 +60,7 @@ export class MemoryService {
       const result = await this.pool.query(query, [sessionId]);
       return result.rows;
     } catch (error: any) {
-      console.error('❌ Error retrieving history:', error.message);
+      console.error(' [ERR]  Error retrieving history:', error.message);
       return [];
     }
   }
@@ -75,7 +75,7 @@ export class MemoryService {
       await this.pool.query(query, [sessionId, state]);
       console.log(`📊 State updated: ${state} (${sessionId})`);
     } catch (error: any) {
-      console.error('❌ Error updating state:', error.message);
+      console.error(' [ERR]  Error updating state:', error.message);
     }
   }
 
@@ -99,7 +99,7 @@ export class MemoryService {
       const result = await this.pool.query(query, [sessionId]);
       return result.rows.length > 0 ? result.rows[0] : null;
     } catch (error: any) {
-      console.error('❌ Error getting session:', error.message);
+      console.error(' [ERR]  Error getting session:', error.message);
       return null;
     }
   }
@@ -111,7 +111,7 @@ export class MemoryService {
       console.log(`🗑️ Session deleted: ${sessionId}`);
       return result.rowCount! > 0;
     } catch (error: any) {
-      console.error('❌ Error deleting session:', error.message);
+      console.error(' [ERR]  Error deleting session:', error.message);
       return false;
     }
   }
@@ -131,7 +131,7 @@ export class MemoryService {
       const result = await this.pool.query(query);
       return result.rows[0];
     } catch (error: any) {
-      console.error('❌ Error getting stats:', error.message);
+      console.error(' [ERR]  Error getting stats:', error.message);
       return null;
     }
   }
@@ -147,7 +147,7 @@ export class MemoryService {
       console.log(`🧹 Pruned ${result.rowCount} old sessions`);
       return result.rowCount || 0;
     } catch (error: any) {
-      console.error('❌ Error pruning sessions:', error.message);
+      console.error(' [ERR]  Error pruning sessions:', error.message);
       return 0;
     }
   }

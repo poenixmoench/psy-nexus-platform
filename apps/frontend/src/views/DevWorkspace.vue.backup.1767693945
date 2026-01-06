@@ -1,0 +1,148 @@
+<template>
+  <div class="neural-grid">
+    <aside class="agents-section">
+      <div class="section-header">NEURAL NODES</div>
+      <div class="agents-grid">
+        <div v-for="(agent, name) in agents" :key="name" class="agent-card" :class="{ active: activeAgent === name }" @click="activeAgent = name">
+          <div class="card-header"><span>{{ name }}</span><div class="signal-wrapper"><div class="status-indicator" :class="agent.status"></div><div v-if="agent.status === 'processing'" class="pulse-ring"></div></div></div>
+          <div class="card-body">{{ agent.role }}</div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="chat-section">
+      <div class="neural-map-container">
+        <svg class="neural-map" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet">
+          <g class="pulsing-rings"><circle cx="150" cy="150" r="60" class="ring pulse" /><circle cx="150" cy="150" r="60" class="ring pulse" style="animation-delay: 0.3s" /><circle cx="150" cy="150" r="60" class="ring pulse" style="animation-delay: 0.6s" /></g>
+          <circle cx="150" cy="150" r="40" class="ring-static" /><circle cx="150" cy="150" r="80" class="ring-static" /><circle cx="150" cy="150" r="100" class="ring-static" />
+          <circle cx="150" cy="150" r="10" class="core-node" /><g class="agent-nodes"><g v-for="(name, i) in agentNames" :key="'node-' + i" :class="['node', { active: activeAgent === name }]"><circle :cx="nodeX(i)" :cy="nodeY(i)" r="8" class="node-circle" /><text :x="nodeX(i)" :y="nodeY(i) + 22" class="node-label">{{ name.substring(0, 3).toUpperCase() }}</text></g></g>
+        </svg>
+      </div>
+
+      <div class="messages-area" ref="msgBox">
+        <div v-for="(msg, i) in agents[activeAgent]?.history" :key="i" class="message" :class="msg.type">
+          <div class="msg-header">
+            <span class="msg-agent">{{ msg.agent }}</span>
+            <span class="msg-time">{{ formatTime(msg.timestamp) }}</span>
+          </div>
+          <div class="msg-text" style="white-space: pre-wrap;">{{ msg.text }}</div>
+        </div>
+        <div v-if="streamingAgent === activeAgent" class="message agent streaming">
+           <div class="msg-header"><span class="msg-agent">{{ streamingAgent }}</span></div>
+           <div class="msg-text">{{ streamingText }}<span class="cursor">▌</span></div>
+        </div>
+      </div>
+
+      <div class="input-zone">
+        <input v-model="userInput" @keyup.enter="send" :placeholder="'BEFEHL AN ' + activeAgent + '...'" class="system-input" />
+        <button @click="send" class="btn-execute">SENDEN</button>
+      </div>
+    </main>
+
+    <section class="stats-section">
+      <div class="section-header">LIVE PREVIEW</div>
+      <div class="preview-box">
+        <div v-if="livePreview" v-html="livePreview" class="preview-content"></div>
+        <div v-else class="preview-empty"><span class="text-muted">Warte auf Input...</span></div>
+      </div>
+    </section>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, nextTick, watch, computed } from 'vue'
+import { io } from 'socket.io-client'
+
+// Socket Configuration
+const socket = io('/', { path: '/socket.io/', transports: ['websocket'] })
+
+const agents = ref<any>({})
+const activeAgent = ref('ORION')
+const userInput = ref('')
+const msgBox = ref<HTMLElement | null>(null)
+const livePreview = ref('')
+const streamingAgent = ref('')
+const streamingText = ref('')
+
+const agentNames = computed(() => Object.keys(agents.value || {}))
+
+// Helper
+const nodeX = (index: number) => 150 + 80 * Math.cos((index / 7) * Math.PI * 2 - Math.PI / 2)
+const nodeY = (index: number) => 150 + 80 * Math.sin((index / 7) * Math.PI * 2 - Math.PI / 2)
+const formatTime = (ts?: string) => ts ? new Date(ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''
+
+const send = () => {
+  if (!userInput.value.trim()) return
+  const txt = userInput.value
+  const agt = activeAgent.value
+  
+  // 1. Lokal User-Msg anzeigen
+  if (!agents.value[agt]) agents.value[agt] = { history: [], role: 'Loaded' }
+  agents.value[agt].history.push({ agent: 'FABIAN', text: txt, type: 'user', timestamp: new Date().toISOString() })
+  
+  // 2. An Backend senden
+  socket.emit('agent-message', { agentName: agt, message: txt })
+  userInput.value = ''
+  nextTick(() => scrollToBottom())
+}
+
+const scrollToBottom = () => {
+  if (msgBox.value) msgBox.value.scrollTop = msgBox.value.scrollHeight
+}
+
+onMounted(async () => {
+  // Init Agents
+  try {
+    const res = await fetch('/api/agents')
+    const data = await res.json()
+    const map: any = {}
+    data.forEach((a: any) => map[a.name] = { ...a, history: [], status: 'idle' })
+    agents.value = map
+  } catch(e) { console.error(e) }
+
+  // --- WICHTIG: DER KORRIGIERTE LISTENER ---
+  socket.on('agent-message', (data) => {
+    console.log('📥 Empfangen:', data)
+    
+    // Fix: Backend sendet 'agent', Frontend erwartet 'agent'
+    const senderName = data.agent || data.agentName || 'SYSTEM'
+    const content = data.text || data.message || ''
+    
+    if (agents.value[senderName]) {
+      // Nachricht speichern
+      agents.value[senderName].history.push({
+        agent: senderName,
+        text: content,
+        type: 'agent', // WICHTIG: Grün anzeigen
+        timestamp: data.timestamp || new Date().toISOString()
+      })
+
+      // Live Preview Code Scan
+      const codeMatch = content.match(/```(?:html|svg|xml)?([\s\S]*?)```/)
+      if (codeMatch && codeMatch[1]) {
+        livePreview.value = codeMatch[1].trim()
+      }
+      
+      nextTick(() => scrollToBottom())
+    }
+  })
+})
+</script>
+
+<style scoped>
+/* Minimal Styles zur Sicherheit */
+.neural-grid { display: grid; grid-template-columns: 280px 1fr 400px; height: 100vh; background: #000; color: #00ff9d; overflow: hidden; font-family: monospace; }
+.agents-section { background: #0a0a0a; border-right: 1px solid #222; padding: 10px; }
+.agent-card { padding: 10px; border: 1px solid #222; margin-bottom: 5px; cursor: pointer; }
+.agent-card.active { border-color: #00ff9d; background: #0f1a15; }
+.chat-section { display: flex; flex-direction: column; background: #050505; }
+.messages-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+.message { padding: 10px; border-radius: 4px; max-width: 85%; }
+.message.user { align-self: flex-end; background: rgba(0, 157, 255, 0.1); border-right: 3px solid #009dff; color: #fff; }
+.message.agent { align-self: flex-start; background: rgba(0, 255, 157, 0.05); border-left: 3px solid #00ff9d; color: #00ff9d; }
+.input-zone { padding: 15px; background: #0a0a0a; display: flex; gap: 10px; }
+.system-input { flex: 1; background: #000; border: 1px solid #333; color: #00ff9d; padding: 10px; }
+.btn-execute { background: #00ff9d; color: #000; border: none; padding: 0 20px; font-weight: bold; cursor: pointer; }
+.stats-section { border-left: 1px solid #222; background: #0a0a0a; }
+.preview-box { height: 100%; background: #fff; color: #000; padding: 10px; overflow: auto; }
+</style>

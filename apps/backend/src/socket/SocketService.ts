@@ -22,7 +22,7 @@ export class SocketService {
 
   private setupHandlers() {
     this.io.on('connection', (socket) => {
-      console.log(`🚀 Master-Terminal verbunden: ${socket.id}`);
+      console.log(` [ROCKET]  Master-Terminal verbunden: ${socket.id}`);
 
       socket.on('orion-dialogue', async (data) => {
         // Mapping auf JSON-RPC Standard
@@ -46,7 +46,7 @@ export class SocketService {
         });
       });
 
-      socket.on('disconnect', () => console.log(`📡 Verbindung getrennt`));
+      socket.on('disconnect', () => console.log(` [DEBUG]  Verbindung getrennt`));
     });
   }
 }

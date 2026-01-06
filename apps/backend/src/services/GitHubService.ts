@@ -14,7 +14,7 @@ export class GitHubService {
     }
     this.octokit = new Octokit({ auth: GITHUB_TOKEN });
     this.isEnabled = true;
-    console.log("✅ GitHubService initialized");
+    console.log(" [OK]  GitHubService initialized");
   }
 
   public static getInstance(): GitHubService {

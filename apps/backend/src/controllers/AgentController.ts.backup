@@ -1,0 +1,20 @@
+export class AgentController {
+  static async getAllAgents(req: any, res: any) {
+    const agents = [
+      { name: "ORION", role: "Kommunikations-Assistent", description: "Koordiniert Dialoge", status: "active", id: "agent-orion" },
+      { name: "PLAN-AGENT", role: "Strukturierer", description: "Zerlegt komplexe Tasks", status: "active", id: "agent-plan" },
+      { name: "FRONTEND-MEISTER", role: "HTML/Vue Coder", description: "Generiert UI-Code", status: "active", id: "agent-frontend" },
+      { name: "DESIGN-ALCHEMIST", role: "CSS Master", description: "Styling & Layout", status: "active", id: "agent-design" },
+      { name: "BACKEND-ARCHITEKT", role: "Server Master", description: "Backend-Logik", status: "active", id: "agent-backend" },
+      { name: "QA-GURU", role: "Quality Expert", description: "Validiert Code", status: "active", id: "agent-qa" },
+      { name: "OPTIMIERER", role: "Performance Expert", description: "Optimiert Speed", status: "active", id: "agent-optimizer" },
+      { name: "DOKUMENTATION-AGENT", role: "Knowledge Keeper", description: "Verwaltet Doku", status: "active", id: "agent-docs" }
+    ];
+    res.json(agents);
+  }
+
+  static async getAgentStatus(req: any, res: any) {
+    const { id } = req.params;
+    res.json({ success: true, agentId: id, status: "active" });
+  }
+}

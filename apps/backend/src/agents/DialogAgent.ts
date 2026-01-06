@@ -1,62 +1,39 @@
-import { askAI } from '../services/AIService';
-
-interface Message {
+export interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: string;
 }
 
 export class DialogAgent {
-  private conversationHistory: Message[] = [];
+  public conversationHistory: Message[] = [];
 
   constructor(
     public readonly id = 'DialogAgent',
-    public readonly name = 'Dialog Agent 💬',
-    public readonly icon = '💬',
-    public readonly description = 'Intelligenter Entwickler-Assistent mit Qwen 2.5 Coder'
+    public readonly name = 'Dialog Agent',
+    public readonly icon = ' [DIALOG] ',
+    public readonly description = 'Intelligenter Developer Assistant'
   ) {}
 
-  async execute(task: string, code?: string): Promise<string> {
-    const userMessage: Message = {
-      role: 'user',
-      content: task + (code ? `\n\nCode:\n${code}` : ''),
-      timestamp: new Date().toISOString()
-    };
-
-    this.conversationHistory.push(userMessage);
-
-    // Kontext + System-Prompt bauen
-    const context = this.buildConversationContext();
-    const response = await askAI(context);
-
-    const agentMessage: Message = {
-      role: 'assistant',
-      content: response,
-      timestamp: new Date().toISOString()
-    };
-
-    this.conversationHistory.push(agentMessage);
-    return response;
+  public addUserMessage(content: string) {
+    this.conversationHistory.push({ 
+      role: 'user', 
+      content, 
+      timestamp: new Date().toISOString() 
+    });
   }
 
-  private buildConversationContext(): string {
-    const history = this.conversationHistory.slice(-6).map(msg => 
-      `${msg.role === 'user' ? '👤' : '🤖'} ${msg.content}`
-    ).join('\n\n');
-
-    return `PSY-NEXUS Developer Assistant Konversation:
-
-${history}
-
----
-SYSTEM: Du bist Entwickler-Assistent. Antworte auf Deutsch, stelle Rückfragen bei Unklarheiten, denke schrittweise.`;
+  public addAssistantMessage(content: string) {
+    this.conversationHistory.push({ 
+      role: 'assistant', 
+      content, 
+      timestamp: new Date().toISOString() 
+    });
   }
 
-  getHistory(): Message[] {
-    return [...this.conversationHistory];
-  }
-
-  clearHistory(): void {
-    this.conversationHistory = [];
+  public buildConversationContext(): string {
+    const history = this.conversationHistory.slice(-6)
+      .map(msg => `${msg.role === 'user' ? '👤' : ' [AI] '} ${msg.content}`)
+      .join('\n\n');
+    return `PSY-NEXUS Developer Assistant Konversation:\n\n${history}\n\nSYSTEM: Antworte präzise auf Deutsch.`;
   }
 }

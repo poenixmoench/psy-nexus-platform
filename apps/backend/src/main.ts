@@ -12,6 +12,6 @@ app.get('/api/health', (req, res) => res.json({ status: 'OK' }));
 app.use('/api', agentRoutes);
 app.use('/api/stream', streamingChatRouter);
 
-app.listen(3000, () => console.log('✅ Server on 3000'));
+app.listen(3000, () => console.log(' [OK]  Server on 3000'));
 
 export default app;

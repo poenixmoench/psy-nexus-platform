@@ -1,39 +1,48 @@
 <template>
   <div class="neural-grid">
+    <div v-if="showToast" class="system-toast">{{ toastMsg }}</div>
+
+    <!-- LEFT: AGENTS -->
     <aside class="agents-section">
-      <div class="section-header">NEURAL NODES</div>
+      <div class="section-header">⚡ NEURAL NODES</div>
       <div class="agents-grid">
-        <div v-for="(agent, name) in agents" :key="name" class="agent-card" :class="{ active: activeAgent === name }" @click="activeAgent = name">
-          <div class="card-header"><span>{{ name }}</span><div class="signal-wrapper"><div class="status-indicator" :class="agent.status"></div><div v-if="agent.status === 'processing'" class="pulse-ring"></div></div></div>
-          <div class="card-body">{{ agent.role }}</div>
+        <div v-for="(agent, name) in agents" :key="name"
+             class="agent-card" :class="{ active: activeAgent === name }"
+             @click="activeAgent = name">
+          <div class="card-header">
+            <span class="agent-name">{{ name }}</span>
+            <div class="signal-wrapper">
+              <div class="status-indicator" :class="{ processing: streamingAgent === name }"></div>
+              <div v-if="streamingAgent === name" class="pulse-ring"></div>
+            </div>
+          </div>
+          <div class="card-body">{{ agentTheme[name]?.role || 'Sub-System' }}</div>
         </div>
       </div>
     </aside>
 
+    <!-- CENTER: CHAT -->
     <main class="chat-section">
-      <div class="neural-map-container">
-        <svg class="neural-map" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet">
+      <div class="neural-map-wrapper">
+        <div class="neural-map-header">
+          <span class="header-icon">🧠</span>
+          <span class="header-title">NEXUS CORE</span>
+          <span class="header-status">{{ activeAgent }}</span>
+          <button @click="resetConversation" class="btn-reset">♻️ RESET</button>
+        </div>
+
+        <svg class="neural-map" viewBox="0 0 300 300">
           <g class="pulsing-rings">
             <circle cx="150" cy="150" r="60" class="ring pulse" />
-            <circle cx="150" cy="150" r="60" class="ring pulse" style="animation-delay: 0.3s" />
-            <circle cx="150" cy="150" r="60" class="ring pulse" style="animation-delay: 0.6s" />
           </g>
-          <circle cx="150" cy="150" r="40" class="ring-static" />
-          <circle cx="150" cy="150" r="80" class="ring-static" />
-          <circle cx="150" cy="150" r="100" class="ring-static" />
           <circle cx="150" cy="150" r="10" class="core-node" />
-          <circle cx="150" cy="150" r="10" class="core-pulse" />
-          <g class="agent-nodes">
-            <g v-for="(name, i) in agentNames" :key="'node-' + i" :class="['node', { active: activeAgent === name, [agents[name]?.status]: true }]" @click.stop="activeAgent = name">
-              <line x1="150" y1="150" :x2="nodeX(i)" :y2="nodeY(i)" class="connection-line" />
-              <circle v-if="activeAgent === name" :cx="nodeX(i)" :cy="nodeY(i)" r="25" class="node-halo" />
-              <circle :cx="nodeX(i)" :cy="nodeY(i)" r="15" class="node-pulse-ring" />
+          <g v-for="(name, i) in agentNames" :key="i">
+            <line x1="150" y1="150" :x2="nodeX(i)" :y2="nodeY(i)"
+                  class="workflow-line" :class="{ active: activeAgent === name }" />
+            <g :class="['node', { active: activeAgent === name, streaming: streamingAgent === name }]">
               <circle :cx="nodeX(i)" :cy="nodeY(i)" r="8" class="node-circle" />
-              <text :x="nodeX(i)" :y="nodeY(i) + 22" class="node-label">{{ name.substring(0, 3).toUpperCase() }}</text>
+              <text :x="nodeX(i)" :y="nodeY(i) + 22" class="node-label">{{ name.substring(0, 3) }}</text>
             </g>
-          </g>
-          <g class="thread-connections">
-            <line v-for="i in 7" :key="'thread-' + i" :x1="nodeX(i - 1)" :y1="nodeY(i - 1)" :x2="nodeX(i % 7)" :y2="nodeY(i % 7)" class="thread-line" />
           </g>
         </svg>
       </div>
@@ -41,323 +50,654 @@
       <div class="messages-area" ref="msgBox">
         <div v-for="(msg, i) in agents[activeAgent]?.history" :key="i" class="message" :class="msg.type">
           <div class="msg-header">
-            <span class="msg-agent">{{ msg.agent || 'NUTZER' }}</span>
-            <div v-if="msg.agent && msg.agent !== 'NUTZER'" class="msg-actions">
-              <button @click="copyMessage(msg.text)" class="btn-copy" title="Text kopieren">📋 KOPIEREN</button>
-              <button @click="deleteMessage(i)" class="btn-delete" title="Nachricht löschen">🗑️ LÖSCHEN</button>
-            </div>
+            <span class="msg-agent">{{ msg.agent }}</span>
+            <button v-if="msg.type === 'agent'" @click="copy(msg.text)" class="btn-copy">📋 COPY</button>
           </div>
-          <div class="msg-text">{{ msg.text }}</div>
-        </div> 
+          <div class="msg-text" v-html="marked(msg.text)"></div>
+        </div>
+
+        <div v-if="streamingAgent" class="stop-container">
+          <button @click="stopGeneration" class="btn-stop">■ STOP GENERATION</button>
+        </div>
+
         <div v-if="streamingAgent === activeAgent" class="message agent streaming">
-          <div class="msg-header">
-            <span class="msg-agent">{{ streamingAgent }}</span>
-            <div class="msg-actions">
-              <button @click="copyMessage(streamingText)" class="btn-copy" title="Text kopieren">📋 KOPIEREN</button>
-              <button @click="deleteStreamingMessage()" class="btn-delete" title="Nachricht löschen">🗑️ LÖSCHEN</button>
-            </div>
-          </div>
-          <div class="msg-text"><span v-if="!streamingText">...</span><span v-else>{{ streamingText }}</span><span class="cursor">▌</span></div>
+          <div class="msg-text">{{ streamingText }}<span class="cursor">▌</span></div>
         </div>
       </div>
 
       <div class="input-zone">
-        <input v-model="userInput" @keyup.enter="send" :placeholder="'SYSTEM_INPUT > ' + activeAgent + '...'" class="system-input" />
-        <button @click="send" class="btn-execute">SENDEN</button>
+        <textarea v-model="userInput" @keydown.enter.exact.prevent="send"
+                  :placeholder="'BEFEHL AN ' + activeAgent + '...'"
+                  class="system-input"></textarea>
+        <button @click="send" class="btn-execute" :disabled="!!streamingAgent">SENDEN</button>
       </div>
     </main>
 
+    <!-- RIGHT: PREVIEW WITH IFRAME SANDBOX -->
     <section class="stats-section">
-      <div class="section-header">LIVE PREVIEW</div>
+      <div class="section-header">📊 LIVE PREVIEW</div>
       <div class="preview-box">
-        <div v-if="livePreview" v-html="livePreview" class="preview-content"></div>
-        <div v-else class="preview-empty"><span class="text-muted">Keine Vorschau verfügbar</span></div>
+        <iframe 
+          v-if="livePreview" 
+          :key="livePreviewKey"
+          :srcdoc="livePreview" 
+          class="preview-iframe"
+          sandbox="allow-scripts allow-same-origin"
+          title="Live Preview"
+        ></iframe>
+        <div v-else class="preview-empty">Warte auf SVG/HTML Input...</div>
       </div>
-    </section>   </div>
+    </section>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick, watch, computed } from 'vue'
+import { ref, onMounted, nextTick, computed } from 'vue'
 import { io } from 'socket.io-client'
+import { marked } from 'marked'
 
-// ✅ FIXED: Socket URL für Production
-const socket = io('https://api.psy-nexus.live', {
-  path: '/socket.io/',
-  transports: ['websocket'],
-  reconnection: true,
-  reconnectionDelay: 1000,
-  reconnectionAttempts: 5
-})
-
+const socket = io('/', { path: '/socket.io/', transports: ['websocket'] })
 const agents = ref<any>({})
 const activeAgent = ref('ORION')
 const userInput = ref('')
 const msgBox = ref<HTMLElement | null>(null)
 const livePreview = ref('')
+const livePreviewKey = ref(0)
 const streamingAgent = ref('')
 const streamingText = ref('')
-const targetText = ref('')
+const showToast = ref(false)
+const toastMsg = ref('')
 
-let typewriterInterval: ReturnType<typeof setInterval> | null = null
+const agentTheme: any = {
+  'ORION': { role: 'Strategische Leitung' },
+  'PLAN-AGENT': { role: 'Projekt-Koordination' },
+  'FRONTEND-MEISTER': { role: 'UI/UX-Architektur' },
+  'DESIGN-ALCHEMIST': { role: 'Visuelle Gestaltung' },
+  'BACKEND-ARCHITEKT': { role: 'System-Infrastruktur' },
+  'QA-GURU': { role: 'Qualitätssicherung' },
+  'OPTIMIERER': { role: 'Performance-Tuning' },
+  'DOKUMENTATION-AGENT': { role: 'Technische Dokumentation' }
+}
 
 const agentNames = computed(() => Object.keys(agents.value || {}))
+const nodeX = (index: number) => 150 + 85 * Math.cos((index / (agentNames.value.length || 1)) * Math.PI * 2 - Math.PI / 2)
+const nodeY = (index: number) => 150 + 85 * Math.sin((index / (agentNames.value.length || 1)) * Math.PI * 2 - Math.PI / 2)
 
-const nodeX = (index: number): number => {
-  const angle = (index / 7) * Math.PI * 2 - Math.PI / 2
-  return 150 + 80 * Math.cos(angle)
-} 
-const nodeY = (index: number): number => {
-  const angle = (index / 7) * Math.PI * 2 - Math.PI / 2
-  return 150 + 80 * Math.sin(angle)
-}
-
-const copyMessage = (text: string) => {
-  navigator.clipboard.writeText(text)
-  console.log('✅ Text kopiert!')
-}
-
-const deleteMessage = (idx: number) => {
-  agents.value[activeAgent.value].history.splice(idx, 1)
-}
-
-const deleteStreamingMessage = () => {
-  streamingAgent.value = ''
-  streamingText.value = ''
-  targetText.value = ''
-}
-
-const handleKeyDown = (e: KeyboardEvent) => {
-  if (e.ctrlKey && e.key === 'c') {
-    const messages = agents.value[activeAgent.value]?.history || []
-    const lastAgentMsg = [...messages].reverse().find((m: any) => m.agent && m.agent !== 'NUTZER')
-    if (lastAgentMsg?.text) {       e.preventDefault()
-      navigator.clipboard.writeText(lastAgentMsg.text)
-      console.log('✅ Letzte Nachricht kopiert (Ctrl+C)!')
-    }
-  }
+const triggerToast = (m: string) => { 
+  toastMsg.value = m
+  showToast.value = true
+  setTimeout(() => showToast.value = false, 2000)
 }
 
 const send = () => {
-  if (!userInput.value.trim()) return
-  const msgText = userInput.value
-  const currentAgent = activeAgent.value
+  if (!userInput.value.trim() || streamingAgent.value) return
+  const txt = userInput.value
+  agents.value[activeAgent.value].history.push({ agent: 'FABIAN', text: txt, type: 'user' })
+  streamingAgent.value = activeAgent.value
+  streamingText.value = ''
+  socket.emit('agent-message', { agentName: activeAgent.value, message: txt })
+  userInput.value = ''
+  nextTick(scrollToBottom)
+}
 
-  // 1️⃣ Sofort lokal in history pushen - BEVOR Backend antwortet
-  if (agents.value[currentAgent]) {
-    if (!agents.value[currentAgent].history) agents.value[currentAgent].history = []
-    agents.value[currentAgent].history.push({
-      agent: "NUTZER",
-      text: msgText,
-      type: "user"
+const stopGeneration = () => {
+  socket.emit('abort-generation')
+  if (streamingText.value) {
+    agents.value[streamingAgent.value].history.push({
+      agent: streamingAgent.value, 
+      text: streamingText.value + "\n\n[HALTED]", 
+      type: 'agent'
     })
   }
-
-  // 2️⃣ Sende zu Backend
-  socket.emit("agent-message", {
-    agentName: currentAgent,
-    message: msgText
-  })
-
-  userInput.value = ""
-
-  // 3️⃣ Auto-scroll
-  nextTick(() => {
-    if (msgBox.value) msgBox.value.scrollTop = msgBox.value.scrollHeight
-  })
+  streamingAgent.value = ''
+  triggerToast("STOPPED")
 }
-watch(streamingText, () => {
-  nextTick(() => {
-    if (msgBox.value) msgBox.value.scrollTop = msgBox.value.scrollHeight
-  })
-})
+
+const resetConversation = () => {
+  if (confirm("Reset Nexus Context?")) {
+    agents.value[activeAgent.value].history = []
+    livePreview.value = ''
+    triggerToast("CONTEXT CLEARED")
+  }
+}
+
+const copy = (t: string) => { 
+  navigator.clipboard.writeText(t)
+  triggerToast("COPIED")
+}
+
+const scrollToBottom = () => { 
+  if (msgBox.value) msgBox.value.scrollTop = msgBox.value.scrollHeight 
+}
+
+const extractCodeBlock = (text: string): string => {
+  let match = text.match(/```(?:html|svg|xml|jsx|tsx|javascript|typescript)\s+([\s\S]*?)```/)
+  if (match && match[1]) return match[1].trim()
+
+  match = text.match(/```\s*([\s\S]*?)```/)
+  if (match && match[1]) return match[1].trim()
+
+  return ''
+}
 
 onMounted(async () => {
-  // Make variables global for console debugging
-  window.socket = socket
-  window.activeAgent = activeAgent
-  window.agents = agents
-  window.userInput = userInput
-  window.send = send
-  console.log('🔌 Socket gemacht global:', socket)
-  console.log('🔄 DevWorkspace mounted - loading agents...')
-  // 1️⃣ Lade Agenten SOFORT via REST API (FALLBACK)
-  try {
-    const response = await fetch('https://api.psy-nexus.live/api/agents')
-    const data = await response.json()
+  const res = await fetch('/api/agents')
+  const data = await res.json()
+  data.forEach((a: any) => agents.value[a.name] = { ...a, history: [] })
 
-    // Handle both: Array from API or Object from WebSocket
-    const agentsObj: any = {}
-    if (Array.isArray(data)) {
-      // API sendet Array -> convert to Object mit defaults
-      data.forEach((agent: any) => {
-        agentsObj[agent.name] = {
-          role: agent.role,
-          status: 'idle',
-          history: []
-        }
+  socket.on('agent-chunk', (data) => {
+    if (data.agent === streamingAgent.value) {
+      streamingText.value += data.content
+      scrollToBottom()
+    }
+  })
+
+  socket.on('agent-done', () => {
+    if (streamingAgent.value) {
+      agents.value[streamingAgent.value].history.push({
+        agent: streamingAgent.value, 
+        text: streamingText.value, 
+        type: 'agent'
       })
-      console.log('✅ Agenten geladen via REST (Array):', Object.keys(agentsObj))
-    } else if (data.agents) {
-      // WebSocket sendet mit agents property
-      console.log('✅ Agenten geladen via REST (Object):', Object.keys(data.agents || {}))
-      Object.assign(agentsObj, data.agents)
-    }
-    agents.value = agentsObj
-  } catch (err) {
-    console.error('❌ REST Fehler:', err)
-  }
-
-  // 2️⃣ WebSocket Listener für Live Updates
-  socket.on('init-agents', (data) => {
-    console.log('✅ Agenten via WebSocket:', Object.keys(data.agents || {}))
-    const agentsObj: any = {}
-    if (Array.isArray(data)) {
-      data.forEach((agent: any) => {
-        agentsObj[agent.name] = { role: agent.role, status: 'idle', history: [] }
-      })
-    } else if (data.agents) {
-      Object.assign(agentsObj, data.agents)
-    }
-    agents.value = agentsObj
-  })
-
-  socket.on('connect', () => {
-  socket.onAny((event, ...args) => { console.log('🕵️ JEDES EVENT:', event, args) })
-    console.log('🔌 WebSocket verbunden!')
-  })
-
-  socket.on('disconnect', () => {
-    console.log('🔌 WebSocket getrennt!')
-  })
-
-  socket.on('agent-partial', (data) => {
-    if (data.agentName === activeAgent.value) {
-      streamingAgent.value = data.agent
-      targetText.value = data.partial
-
-      if (!typewriterInterval) {
-        typewriterInterval = setInterval(() => {
-          if (streamingText.value.length < targetText.value.length) {
-            streamingText.value += targetText.value.charAt(streamingText.value.length)
-          }
-        }, 20)
+      
+      const code = extractCodeBlock(streamingText.value)
+      if (code) {
+      console.log("🔍 streamingText Länge:", streamingText.value.length);
+      console.log("🔍 extractCodeBlock Funktion?", typeof extractCodeBlock);
+        livePreview.value = code
+      console.log("📦 Code extracted?", !!code, code?.length);
+        livePreviewKey.value++
       }
     }
+    streamingAgent.value = ''
+    streamingText.value = ''
   })
-
-
-  socket.on('agent-message', (data) => {
-    console.log('💬 User message received:', data)
-    if (data.agentName === activeAgent.value) {
-      if (agents.value[activeAgent.value]) {
-        agents.value[activeAgent.value].history = agents.value[activeAgent.value].history || []
-        agents.value[activeAgent.value].history.push({
-          agent: 'NUTZER',
-          text: data.message,
-          type: 'user'
-        })
-      }
-    }
-  })
-  socket.on('state-update', (data) => {
-    agents.value = data.agents || {}
-
-    if (data.lastUpdate === streamingAgent.value) {
-      if (typewriterInterval) {
-        clearInterval(typewriterInterval)
-        typewriterInterval = null
-      }
-
-      if (agents.value[streamingAgent.value]) {
-        agents.value[streamingAgent.value].history = agents.value[streamingAgent.value].history || []
-        agents.value[streamingAgent.value].history.push({
-          agent: streamingAgent.value,
-          text: streamingText.value,
-          type: 'agent'
-        })
-      }
-
-      streamingAgent.value = ''
-      streamingText.value = ''
-      targetText.value = ''
-    }
-  })
-
-  window.addEventListener('keydown', handleKeyDown)
 })
 </script>
 
 <style scoped>
-* { font-family: 'Ubuntu Mono', 'Courier New', monospace; }
-.neural-grid { display: grid; grid-template-columns: 280px 1fr 350px; height: 100vh; width: 100vw; background: #000; color: #00ff9d; gap: 1px; overflow: hidden; }
-.agents-section { background: #0a0a0a; border-right: 1px solid #1a1a1a; display: flex; flex-direction: column; overflow: hidden; }
-.section-header { background: #000; padding: 12px; border-bottom: 1px solid #1a1a1a; font-size: 0.75em; letter-spacing: 2px; color: #444; text-transform: uppercase; font-weight: bold; }
-.agents-grid { padding: 10px; overflow-y: auto; flex: 1; }
-.agents-grid::-webkit-scrollbar { width: 6px; }
-.agents-grid::-webkit-scrollbar-track { background: #0a0a0a; }
-.agents-grid::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-.agent-card { background: #080808; border: 1px solid #111; padding: 12px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s ease; border-radius: 2px; }
-.agent-card:hover { border-color: #333; background: #0c0c0c; }
-.agent-card.active { border-color: #00ff9d; background: #0c0c0c; box-shadow: inset 0 0 10px rgba(0, 255, 157, 0.05); }
-.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; color: #00ff9d; }
-.signal-wrapper { position: relative; width: 12px; height: 12px; }
-.status-indicator { width: 8px; height: 8px; border-radius: 50%; background: #444; margin: 2px; }
-.status-indicator.idle { background: #444; }
-.status-indicator.processing { background: #ffaa00; }
-.status-indicator.completed { background: #00ff9d; }
-.pulse-ring { position: absolute; width: 12px; height: 12px; border: 1px solid #ffaa00; border-radius: 50%; animation: pulse 1.5s infinite; }
-@keyframes pulse { 0% { width: 12px; height: 12px; opacity: 1; } 100% { width: 20px; height: 20px; opacity: 0; } }
-.card-body { font-size: 0.75em; color: #888; line-height: 1.4; }
-.chat-section { display: flex; flex-direction: column; background: #050505; border-right: 1px solid #1a1a1a; overflow: hidden; }
-.neural-map-container { height: 250px; background: radial-gradient(circle at center, #0a0a0a 0%, #000 100%); border-bottom: 1px solid #1a1a1a; display: flex; align-items: center; justify-content: center; }
-.neural-map { width: 100%; height: 100%; max-width: 300px; max-height: 300px; }
-.pulsing-rings .ring { fill: none; stroke: #00ff9d; opacity: 0.3; stroke-width: 1; }
-.pulsing-rings .ring.pulse { animation: ring-pulse 3s infinite ease-out; }
-@keyframes ring-pulse { 0% { r: 50; opacity: 0.4; } 100% { r: 120; opacity: 0; } }
-.ring-static { fill: none; stroke: #00ff9d; opacity: 0.1; stroke-width: 0.5; }
-.core-node { fill: #00ff9d; filter: drop-shadow(0 0 6px #00ff9d); }
-.core-pulse { fill: none; stroke: #00ff9d; opacity: 0.3; animation: core-pulse 2s infinite; }
-@keyframes core-pulse { 0% { r: 10; opacity: 0.5; } 50% { r: 15; opacity: 0.2; } 100% { r: 10; opacity: 0.5; } }
-.connection-line { stroke: #00ff9d; stroke-width: 0.5; opacity: 0.2; }
-.thread-line { stroke: #009dff; stroke-width: 0.5; opacity: 0.15; animation: flow 4s infinite linear; }
-@keyframes flow { 0% { stroke-dashoffset: 10; } 100% { stroke-dashoffset: 0; } }
-.node-circle { fill: #00ff9d; transition: all 0.2s; opacity: 0.7; }
-.node.active .node-circle { r: 10; fill: #00ff41; filter: drop-shadow(0 0 8px #00ff41); }
-.node-pulse-ring { fill: none; stroke: #00ff9d; opacity: 0.3; animation: node-pulse 2s infinite; }
-@keyframes node-pulse { 0% { r: 15; opacity: 0.5; } 100% { r: 25; opacity: 0; } }
-.node-halo { fill: none; stroke: #00ff9d; opacity: 0.4; stroke-width: 1; filter: drop-shadow(0 0 4px #00ff9d); }
-.node-label { fill: #00ff9d; font-size: 9px; text-anchor: middle; font-weight: bold; opacity: 0.8; }
-.messages-area { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; background: #050505; }
-.messages-area::-webkit-scrollbar { width: 6px; }
-.messages-area::-webkit-scrollbar-track { background: #0a0a0a; }
-.messages-area::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-.message { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-left: 2px solid; border-radius: 2px; max-width: 100%; word-wrap: break-word; }
-.message.user { align-self: flex-end; border-left-color: #009dff; background: rgba(0, 157, 255, 0.05); color: #009dff; }
-.message.agent { align-self: flex-start; border-left-color: #00ff9d; background: rgba(0, 255, 157, 0.05); color: #00ff9d; }
-.message.streaming { font-style: italic; }
-.msg-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; }
-.msg-agent { font-size: 0.75em; opacity: 0.6; text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0; }
-.msg-text { font-size: 0.9em; line-height: 1.5; word-wrap: break-word; }
-.cursor { animation: cursor-blink 1s infinite; }
-@keyframes cursor-blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
-.msg-actions { display: flex; gap: 6px; flex-shrink: 0; margin-left: auto; }
-.btn-copy, .btn-delete { padding: 4px 8px; background: #00ff9d; color: #000; border: none; cursor: pointer; font-size: 0.6rem; border-radius: 2px; font-weight: bold; transition: all 0.2s; white-space: nowrap; flex-shrink: 0; }
-.btn-delete { background: #ff4444; color: #fff; }
-.btn-copy:hover, .btn-delete:hover { opacity: 0.8; box-shadow: 0 0 6px currentColor; }
-.btn-copy:active, .btn-delete:active { transform: scale(0.95); }
-.input-zone { display: flex; gap: 8px; padding: 12px; border-top: 1px solid #1a1a1a; background: #0a0a0a; }
-.system-input { flex: 1; background: #080808; border: 1px solid #1a1a1a; color: #00ff9d; padding: 10px; font-family: 'Ubuntu Mono', monospace; font-size: 0.85em; }
-.system-input:focus { outline: none; border-color: #00ff9d; box-shadow: inset 0 0 8px rgba(0, 255, 157, 0.1); }
-.system-input::placeholder { color: #444; opacity: 0.7; }
-.btn-execute { padding: 10px 16px; background: #00ff9d; color: #000; border: none; border-radius: 2px; cursor: pointer; font-weight: bold; transition: all 0.2s; white-space: nowrap; }
-.btn-execute:hover { background: #00ff41; box-shadow: 0 0 12px rgba(0, 255, 157, 0.4); }
-.btn-execute:active { transform: scale(0.98); }
-.stats-section { background: #0a0a0a; border-left: 1px solid #1a1a1a; display: flex; flex-direction: column; overflow: hidden; }
-.preview-box { flex: 1; overflow-y: auto; padding: 12px; background: #050505; }
-.preview-box::-webkit-scrollbar { width: 6px; }
-.preview-box::-webkit-scrollbar-track { background: #0a0a0a; }
-.preview-box::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-.preview-content { font-size: 0.9em; line-height: 1.6; color: #888; word-wrap: break-word; }
-.preview-empty { display: flex; align-items: center; justify-content: center; height: 100%; color: #444; font-style: italic; }
-.text-muted { opacity: 0.5; }
+* {
+  font-family: 'Ubuntu Mono', 'Courier New', monospace;
+}
+
+.neural-grid { 
+  display: grid; 
+  grid-template-columns: 280px 1fr 400px; 
+  height: 100vh; 
+  background: #000; 
+  color: #32ff00; 
+  overflow: hidden;
+}
+
+.system-toast { 
+  position: fixed; 
+  top: 20px; 
+  left: 50%; 
+  transform: translateX(-50%); 
+  background: #32ff00; 
+  color: #000; 
+  padding: 10px 30px; 
+  font-weight: bold; 
+  z-index: 1000;
+  border-radius: 4px;
+}
+
+.agents-section { 
+  border-right: 1px solid rgba(50, 255, 0, 0.2); 
+  padding: 20px; 
+  background: #050505; 
+  overflow-y: auto;
+}
+
+.section-header {
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  color: #32ff00;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.agents-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.agent-card { 
+  padding: 12px; 
+  border: 1px solid rgba(50, 255, 0, 0.2); 
+  cursor: pointer; 
+  transition: 0.3s;
+  background: #000;
+  border-radius: 4px;
+}
+
+.agent-card:hover {
+  border-color: #32ff00;
+  background: rgba(50, 255, 0, 0.05);
+}
+
+.agent-card.active { 
+  border-color: #32ff00; 
+  background: rgba(50, 255, 0, 0.1);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.agent-name {
+  font-size: 12px;
+  font-weight: bold;
+  color: #32ff00;
+}
+
+.signal-wrapper {
+  position: relative;
+  width: 12px;
+  height: 12px;
+}
+
+.status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #333;
+  border: 1px solid #32ff00;
+  transition: 0.3s;
+}
+
+.status-indicator.processing {
+  background: #32ff00;
+  box-shadow: 0 0 8px #32ff00;
+}
+
+.pulse-ring {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 20px;
+  height: 20px;
+  border: 1px solid #32ff00;
+  border-radius: 50%;
+  animation: pulse 1.5s ease-out infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+.card-body {
+  font-size: 11px;
+  color: #888;
+}
+
+.chat-section { 
+  display: flex; 
+  flex-direction: column; 
+  background: #000;
+  overflow: hidden;
+}
+
+.neural-map-wrapper {
+  border-bottom: 1px solid rgba(50, 255, 0, 0.1);
+  background: #050505;
+}
+
+.neural-map-header { 
+  display: flex; 
+  align-items: center; 
+  gap: 15px; 
+  padding: 15px; 
+  border-bottom: 1px solid rgba(50, 255, 0, 0.1);
+  font-size: 12px;
+}
+
+.header-icon {
+  font-size: 18px;
+}
+
+.header-title {
+  font-weight: bold;
+  color: #32ff00;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  flex: 1;
+}
+
+.header-status {
+  background: rgba(50, 255, 0, 0.1);
+  padding: 4px 8px;
+  border-radius: 3px;
+  color: #32ff00;
+  font-size: 11px;
+}
+
+.btn-reset { 
+  background: transparent; 
+  border: 1px solid #ff3300; 
+  color: #ff3300; 
+  padding: 4px 10px; 
+  cursor: pointer; 
+  font-size: 11px;
+  border-radius: 3px;
+  font-family: 'Ubuntu Mono', monospace;
+  transition: 0.3s;
+}
+
+.btn-reset:hover {
+  background: rgba(255, 51, 0, 0.1);
+}
+
+.neural-map { 
+  height: 180px; 
+  width: 100%;
+  display: block;
+}
+
+.core-node { 
+  fill: #32ff00; 
+}
+
+.ring {
+  fill: none;
+  stroke: rgba(50, 255, 0, 0.1);
+  stroke-width: 1;
+}
+
+.ring.pulse {
+  animation: ring-pulse 2s ease-out infinite;
+}
+
+@keyframes ring-pulse {
+  0% { stroke-width: 1; opacity: 1; }
+  100% { stroke-width: 3; opacity: 0; }
+}
+
+.workflow-line { 
+  stroke: rgba(50, 255, 0, 0.2); 
+  stroke-dasharray: 5;
+  stroke-width: 1;
+}
+
+.workflow-line.active { 
+  stroke: #32ff00; 
+  stroke-dasharray: 0; 
+  opacity: 1;
+}
+
+.node-circle { 
+  fill: #000; 
+  stroke: #32ff00;
+  stroke-width: 1;
+}
+
+.node.active .node-circle { 
+  fill: #32ff00; 
+}
+
+.node.streaming .node-circle {
+  animation: node-pulse 1s ease-in-out infinite;
+}
+
+@keyframes node-pulse {
+  0%, 100% { fill: #000; }
+  50% { fill: #32ff00; }
+}
+
+.node-label { 
+  font-size: 9px; 
+  fill: #32ff00; 
+  text-anchor: middle;
+  font-family: 'Ubuntu Mono', monospace;
+}
+
+.messages-area { 
+  flex: 1; 
+  overflow-y: auto; 
+  padding: 20px; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 12px;
+}
+
+.message { 
+  padding: 12px; 
+  border-radius: 4px; 
+  max-width: 90%;
+  word-wrap: break-word;
+}
+
+.msg-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 11px;
+}
+
+.msg-agent {
+  font-weight: bold;
+  color: #32ff00;
+  text-transform: uppercase;
+}
+
+.btn-copy {
+  background: transparent;
+  border: 1px solid #0096ff;
+  color: #0096ff;
+  padding: 2px 6px;
+  cursor: pointer;
+  font-size: 10px;
+  border-radius: 2px;
+  font-family: 'Ubuntu Mono', monospace;
+  transition: 0.3s;
+}
+
+.btn-copy:hover {
+  background: rgba(0, 150, 255, 0.1);
+}
+
+.message.user { 
+  align-self: flex-end; 
+  background: rgba(0, 150, 255, 0.1); 
+  border-right: 3px solid #0096ff;
+  color: #0096ff;
+}
+
+.message.agent { 
+  align-self: flex-start; 
+  background: rgba(50, 255, 0, 0.05); 
+  border-left: 3px solid #32ff00;
+  color: #32ff00;
+}
+
+.message.streaming {
+  animation: stream-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes stream-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.msg-text { 
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.cursor {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+.stop-container { 
+  display: flex; 
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.btn-stop { 
+  background: #000; 
+  border: 2px solid #ff3300; 
+  color: #ff3300; 
+  padding: 8px 16px; 
+  font-weight: bold; 
+  cursor: pointer; 
+  animation: blink 1s infinite;
+  border-radius: 4px;
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.btn-stop:hover {
+  background: rgba(255, 51, 0, 0.1);
+}
+
+.input-zone { 
+  padding: 15px; 
+  display: flex; 
+  gap: 10px; 
+  border-top: 1px solid rgba(50, 255, 0, 0.1);
+  background: #050505;
+}
+
+.system-input { 
+  flex: 1; 
+  height: 60px; 
+  background: #000; 
+  border: 1px solid rgba(50, 255, 0, 0.2); 
+  color: #32ff00; 
+  padding: 10px; 
+  resize: none;
+  border-radius: 4px;
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 12px;
+  transition: 0.3s;
+}
+
+.system-input:focus {
+  outline: none;
+  border-color: #32ff00;
+  box-shadow: 0 0 10px rgba(50, 255, 0, 0.3);
+}
+
+.system-input::placeholder {
+  color: #555;
+}
+
+.btn-execute { 
+  background: #32ff00; 
+  color: #000; 
+  border: none; 
+  padding: 10px 20px; 
+  font-weight: bold; 
+  cursor: pointer;
+  border-radius: 4px;
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  transition: 0.3s;
+}
+
+.btn-execute:hover:not(:disabled) {
+  background: #45ff00;
+  box-shadow: 0 0 10px rgba(50, 255, 0, 0.5);
+}
+
+.btn-execute:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.stats-section {
+  border-left: 1px solid rgba(50, 255, 0, 0.2);
+  padding: 15px;
+  background: #050505;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.preview-box { 
+  flex: 1;
+  background: #fff; 
+  padding: 0;
+  overflow: hidden;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+.preview-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+}
+
+.preview-empty {
+  color: #999;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  font-family: 'Ubuntu Mono', monospace;
+  padding: 10px;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(50, 255, 0, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(50, 255, 0, 0.6);
+}
+
+:deep(.markdown-body) {
+  background: transparent;
+  color: inherit;
+}
+
+:deep(.markdown-body code) {
+  background: rgba(50, 255, 0, 0.1);
+  color: #32ff00;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+:deep(.markdown-body pre) {
+  background: #1a1a1a;
+  border: 1px solid rgba(50, 255, 0, 0.2);
+  overflow-x: auto;
+}
+
+:deep(.markdown-body h1),
+:deep(.markdown-body h2),
+:deep(.markdown-body h3) {
+  color: #32ff00;
+  border: none;
+}
 </style>

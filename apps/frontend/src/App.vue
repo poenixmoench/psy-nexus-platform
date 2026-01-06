@@ -11,9 +11,10 @@
   padding: 0;
   box-sizing: border-box;
 }
+
 html, body, #app {
-  height: 100%;
   width: 100%;
+  height: 100%;
   overflow: hidden;
 }
 </style>

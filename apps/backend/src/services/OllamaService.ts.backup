@@ -1,0 +1,83 @@
+import axios from 'axios';
+
+const OLLAMA_API = 'http://127.0.0.1:11434/api/generate';
+
+export interface AgentConfig {
+  name: string;
+  model: string;
+  systemPrompt: string;
+  temperature?: number;
+}
+
+export const AGENT_CONFIGS: { [key: string]: AgentConfig } = {
+  ORION: {
+    name: 'ORION',
+    model: 'ORION:latest',
+    systemPrompt: 'Du bist ORION, Kommunikations-Experte für PSY-NEXUS. Antworte prägnant und strukturiert.',
+    temperature: 0.7,
+  },
+  'FRONTEND-MEISTER': {
+    name: 'FRONTEND-MEISTER',
+    model: 'qwen2.5-coder:14b',
+    systemPrompt: 'Du bist FRONTEND-MEISTER, spezialisiert auf Vue.js 3 und Web-Development.',
+    temperature: 0.5,
+  },
+};
+
+export class OllamaService {
+  static async generateStream(
+    userMessage: string,
+    agentName: string,
+    onChunk: (chunk: string) => void
+  ): Promise<string> {
+    const config = AGENT_CONFIGS[agentName] || AGENT_CONFIGS['ORION'];
+    console.log(`🤖 [${config.name}] Processing: ${config.model}`);
+
+    try {
+      const response = await axios.post(
+        OLLAMA_API,
+        {
+          model: config.model,
+          prompt: userMessage,
+          system: config.systemPrompt,
+          stream: true,
+          temperature: config.temperature || 0.7,
+        },
+        { responseType: 'stream' }
+      );
+
+      let fullText = '';
+
+      return new Promise((resolve, reject) => {
+        response.data.on('data', (chunk: Buffer) => {
+          try {
+            const lines = chunk.toString('utf8').split('\n');
+            for (const line of lines) {
+              if (line.trim()) {
+                const json = JSON.parse(line);
+                if (json.response) {
+                  fullText += json.response;
+                  onChunk(json.response);
+                }
+              }
+            }
+          } catch (err) {
+            // Skip
+          }
+        });
+
+        response.data.on('end', () => {
+          console.log(`✅ [${config.name}] Done`);
+          resolve(fullText);
+        });
+
+        response.data.on('error', (err: any) => {
+          reject(err);
+        });
+      });
+    } catch (err: any) {
+      console.error(`❌ Ollama Error:`, err.message);
+      throw err;
+    }
+  }
+}

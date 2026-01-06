@@ -1,0 +1,31 @@
+[0;1;32m●[0m nginx.service - A high performance web server and a reverse proxy server
+     Loaded: loaded (]8;;file://psy-nexus-production/usr/lib/systemd/system/nginx.service/usr/lib/systemd/system/nginx.service]8;;; [0;1;32menabled[0m; preset: [0;1;32menabled[0m)
+     Active: [0;1;32mactive (running)[0m since Tue 2026-01-06 09:16:55 UTC; 1h 51min ago
+       Docs: ]8;;man:nginx(8)man:nginx(8)]8;;
+    Process: 943 ExecStartPre=/usr/sbin/nginx -t -q -g daemon on; master_process on; (code=exited, status=0/SUCCESS)
+    Process: 1005 ExecStart=/usr/sbin/nginx -g daemon on; master_process on; (code=exited, status=0/SUCCESS)
+   Main PID: 1011 (nginx)
+      Tasks: 17 (limit: 18690)
+     Memory: 18.4M (peak: 19.0M)
+        CPU: 743ms
+     CGroup: /system.slice/nginx.service
+             ├─[0;38;5;245m 1011 "nginx: master process /usr/sbin/nginx -g daemon on; master_process on;"[0m
+             ├─[0;38;5;245m 1013 "nginx: worker process"[0m
+             ├─[0;38;5;245m 1014 "nginx: worker process"[0m
+             ├─[0;38;5;245m 1015 "nginx: worker process"[0m
+             ├─[0;38;5;245m 1024 "nginx: worker process"[0m
+             ├─[0;38;5;245m 1025 "nginx: worker process"[0m
+             ├─[0;38;5;245m 1026 "nginx: worker process"[0m
+             ├─[0;38;5;245m 1028 "nginx: worker process"[0m
+             ├─[0;38;5;245m 1029 "nginx: worker process"[0m
+             ├─[0;38;5;245m75044 "nginx: worker process"[0m
+             ├─[0;38;5;245m75045 "nginx: worker process"[0m
+             ├─[0;38;5;245m75046 "nginx: worker process"[0m
+             ├─[0;38;5;245m75047 "nginx: worker process"[0m
+             ├─[0;38;5;245m75048 "nginx: worker process"[0m
+             ├─[0;38;5;245m75049 "nginx: worker process"[0m
+             ├─[0;38;5;245m75050 "nginx: worker process"[0m
+             └─[0;38;5;245m75051 "nginx: worker process"[0m
+
+Jan 06 09:16:55 psy-nexus-production systemd[1]: Starting nginx.service - A high performance web server and a reverse proxy server...
+Jan 06 09:16:55 psy-nexus-production systemd[1]: Started nginx.service - A high performance web server and a reverse proxy server.

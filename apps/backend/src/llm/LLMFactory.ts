@@ -26,11 +26,11 @@ export class LLMFactory {
         client = new QwenClient();
         break;
       default:
-        throw new Error(`❌ Unsupported LLM model: ${modelName}`);
+        throw new Error(` [ERR]  Unsupported LLM model: ${modelName}`);
     }
 
     this.clients.set(modelName, client);
-    console.log(`✅ LLM Client created: ${modelName}`);
+    console.log(` [OK]  LLM Client created: ${modelName}`);
     return client;
   }
 

@@ -29,7 +29,7 @@ SocketService.init(httpServer);
 
 const PORT = process.env.PORT || 3000;
 httpServer.listen(PORT, () => {
-  console.log(`🚀 PSY-NEXUS Backend Core Running on Port ${PORT}`);
+  console.log(` [ROCKET]  PSY-NEXUS Backend Core Running on Port ${PORT}`);
 });
 
 export default app;

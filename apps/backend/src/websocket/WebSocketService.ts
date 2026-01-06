@@ -54,12 +54,12 @@ export class WebSocketService {
           client.ws.send(payload);
           sent++;
         } catch (error) {
-          console.error(`❌ WS Send failed: ${error}`);
+          console.error(` [ERR]  WS Send failed: ${error}`);
           client.ws.close();
         }
       }
     }
-    if (sent > 0) console.log(`📡 [WS] Broadcast ${runId}: ${sent} clients`);
+    if (sent > 0) console.log(` [DEBUG]  [WS] Broadcast ${runId}: ${sent} clients`);
   }
 
   public getActiveConnections(): number {

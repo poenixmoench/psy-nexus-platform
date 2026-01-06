@@ -18,13 +18,13 @@ export function getPool(): Pool {
       });
 
       pool.on('error', (err) => {
-        console.error('❌ [POOL ERROR]', err.message);
+        console.error(' [ERR]  [POOL ERROR]', err.message);
         logger.error('Unexpected error on idle client', { error: err.message });
       });
 
-      console.log('✅ [DATABASE] Pool created successfully!');
+      console.log(' [OK]  [DATABASE] Pool created successfully!');
     } catch (error) {
-      console.error('❌ [DATABASE ERROR]', error);
+      console.error(' [ERR]  [DATABASE ERROR]', error);
       throw error;
     }
   }

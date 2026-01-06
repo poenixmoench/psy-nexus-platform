@@ -52,7 +52,7 @@ async function orchestrateAgents(
   collectedOutput += reviewerOutput;
   await new Promise(resolve => setTimeout(resolve, 100));
 
-  const finalMessage = '✅ Orchestration pipeline completed successfully';
+  const finalMessage = ' [OK]  Orchestration pipeline completed successfully';
   res.write(`data: ${JSON.stringify({
     type: 'orchestration_final',
     message: finalMessage,

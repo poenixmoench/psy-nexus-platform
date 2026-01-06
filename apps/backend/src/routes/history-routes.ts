@@ -4,7 +4,7 @@ import path from 'path';
 
 const router = Router();
 
-// ✅ REMOVED: Der alte /api/agents endpoint - jetzt in agentRoutes.ts!
+//  [OK]  REMOVED: Der alte /api/agents endpoint - jetzt in agentRoutes.ts!
 
 // Hier folgen deine restlichen History-Routen...
 // (Falls es welche gibt)

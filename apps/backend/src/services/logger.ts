@@ -16,7 +16,7 @@ const logger = {
     fs.appendFileSync(path.join(logDir, 'combined.log'), JSON.stringify({ level: 'warn', message, data, timestamp: new Date().toISOString() }) + '\n');
   },
   error: (message: string, data?: any) => {
-    console.error(`❌ ${message}`, data || '');
+    console.error(` [ERR]  ${message}`, data || '');
     fs.appendFileSync(path.join(logDir, 'error.log'), JSON.stringify({ level: 'error', message, data, timestamp: new Date().toISOString() }) + '\n');
   }
 };
