@@ -16,6 +16,6 @@ export class SocketService {
       userId: payload.userId
     };
     // Die Antwort wird hier direkt im Orchestrator auf Deutsch verarbeitet
-    return await this.orchestrator.processRequest(request);
+    return await this.orchestrator.processRequestStreaming(request, () => {});
   }
 }

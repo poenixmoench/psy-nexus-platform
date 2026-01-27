@@ -16,10 +16,10 @@ async function runOrchestratorTest() {
 
     for (const t of testCases) {
         console.log(`\nTesting ${t.name}...`);
-        const res = await orchestrator.processRequest({
+        const res = await orchestrator.processRequestStreaming({
             agent: t.agent as AgentName,
             input: t.input
-        });
+        }, () => {});
         console.log(`Result ${t.name}:`, res.success ? "✅ SUCCESS" : "❌ FAILED");
         console.log("Output:", res.output.substring(0, 100) + "...");
     }
