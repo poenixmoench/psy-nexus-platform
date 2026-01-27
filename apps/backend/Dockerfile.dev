@@ -1,0 +1,48 @@
+# Multi-Stage Build: Stage 1 (Build)
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Setze npm für CI-Modus (schneller, zuverlässiger)
+ENV CI=true
+
+# Kopiere package files
+COPY package*.json ./
+
+# Installiere Abhängigkeiten
+RUN npm ci --prefer-offline --no-audit
+
+# Kopiere gesamten Code
+COPY . .
+
+# TypeScript Build
+RUN npm run build
+
+# =========================================================================
+# Stage 2: Development Runtime (Hot-Reload)
+# =========================================================================
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Setze Umgebung
+ENV NODE_ENV=development
+ENV NODE_OPTIONS=--max-old-space-size=512
+
+# Installiere nur runtime dependencies (nicht dev)
+COPY package*.json ./
+RUN npm ci --omit=dev --prefer-offline --no-audit && npm cache clean --force
+
+# Kopiere kompilierten Code von Stage 1
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+
+# Kopiere Source für Debug
+COPY src ./src
+COPY tsconfig.json ./
+
+# Expose Port
+EXPOSE 3001
+
+# Starte Backend im Development-Modus
+CMD ["npm", "run", "dev"]

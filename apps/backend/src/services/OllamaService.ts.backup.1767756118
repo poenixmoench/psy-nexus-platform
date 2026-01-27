@@ -1,0 +1,91 @@
+import axios from 'axios';
+
+const OLLAMA_API = 'http://127.0.0.1:11434/api/generate';
+
+export interface AgentConfig {
+  name: string;
+  model: string;
+  systemPrompt: string;
+  temperature?: number;
+}
+
+export const AGENT_CONFIGS: { [key: string]: AgentConfig } = {
+  ORION: {
+    name: 'ORION',
+    model: 'ORION:latest',
+    systemPrompt: 'Du bist ORION. Antworte prägnant und strukturiert.',
+    temperature: 0.7,
+  },
+  'FRONTEND-MEISTER': {
+    name: 'FRONTEND-MEISTER',
+    model: 'qwen2.5-coder:14b',
+    systemPrompt: `🎯 Du bist FRONTEND-MEISTER.
+🚀 ABSOLUT KRITISCH: ANTWORTE IMMER MIT EXAKT EINEM \`\`\`html BLOCK.
+ALLES (HTML, CSS, JS) MUSS IN DIESEM EINEN BLOCK STEHEN.
+KEINE EXTERNEN DATEIEN, KEINE ERKLÄRUNGEN DAVOR ODER DANACH.
+
+FORMAT:
+\`\`\`html
+<!DOCTYPE html>
+<html>
+<head>
+  <style>/* CSS HIER */</style>
+</head>
+<body>
+  <script>/* JS HIER */</script>
+</body>
+</html>
+\`\`\``,
+    temperature: 0.05,
+  },
+};
+
+export class OllamaService {
+  static async generateStream(
+    userMessage: string,
+    agentName: string,
+    onChunk: (chunk: string) => void
+  ): Promise<string> {
+    const config = AGENT_CONFIGS[agentName] || AGENT_CONFIGS['ORION'];
+    try {
+      const response = await axios.post(
+        OLLAMA_API,
+        {
+          model: config.model,
+          prompt: userMessage,
+          system: config.systemPrompt,
+          stream: true,
+          options: {
+            temperature: config.temperature || 0.1,
+            stop: ['```\n', 'Erklärung:', '---'],
+            top_p: 0.3,
+            top_k: 10
+          }
+        },
+        { responseType: 'stream' }
+      );
+
+      let fullText = '';
+      return new Promise((resolve, reject) => {
+        response.data.on('data', (chunk: Buffer) => {
+          try {
+            const lines = chunk.toString('utf8').split('\n');
+            for (const line of lines) {
+              if (line.trim()) {
+                const json = JSON.parse(line);
+                if (json.response) {
+                  fullText += json.response;
+                  onChunk(json.response);
+                }
+              }
+            }
+          } catch (err) {}
+        });
+        response.data.on('end', () => resolve(fullText));
+        response.data.on('error', (err: any) => reject(err));
+      });
+    } catch (err: any) {
+      throw err;
+    }
+  }
+}

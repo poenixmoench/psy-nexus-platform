@@ -1,0 +1,20 @@
+{
+  "name": "psy-nexus-platform-root",
+  "version": "1.0.0",
+  "description": "Monorepo for Psy Nexus Platform",
+  "scripts": {
+    "start:dev": "docker-compose -f infrastructure/docker/docker-compose.yml up --build --force-recreate -d",
+    "stop": "docker-compose -f infrastructure/docker/docker-compose.yml down",
+    "build": "npm run build:backend",
+    "build:backend": "docker-compose -f infrastructure/docker/docker-compose.yml build backend",
+    "build:frontend": "docker-compose -f infrastructure/docker/docker-compose.yml build frontend"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "highlight.js": "^11.11.1",
+    "uuid": "^13.0.0",
+    "ws": "^8.18.3"
+  }
+}

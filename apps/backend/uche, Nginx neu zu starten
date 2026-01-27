@@ -1,0 +1,30 @@
+[0;1;32m●[0m nginx.service - A high performance web server and a reverse proxy server
+     Loaded: loaded (]8;;file://psy-nexus-production/usr/lib/systemd/system/nginx.service/usr/lib/systemd/system/nginx.service]8;;; [0;1;32menabled[0m; preset: [0;1;32menabled[0m)
+     Active: [0;1;32mactive (running)[0m since Sun 2026-01-25 12:27:52 UTC; 8h ago
+       Docs: ]8;;man:nginx(8)man:nginx(8)]8;;
+    Process: 249865 ExecReload=/usr/sbin/nginx -g daemon on; master_process on; -s reload (code=exited, status=0/SUCCESS)
+   Main PID: 1029 (nginx)
+      Tasks: 9 (limit: 18690)
+     Memory: 10.3M (peak: 23.8M swap: 1.4M swap peak: 6.4M)
+        CPU: 10.096s
+     CGroup: /system.slice/nginx.service
+             ├─[0;38;5;245m  1029 "nginx: master process /usr/sbin/nginx -g daemon on; master_process on;"[0m
+             ├─[0;38;5;245m249867 "nginx: worker process"[0m
+             ├─[0;38;5;245m249868 "nginx: worker process"[0m
+             ├─[0;38;5;245m249869 "nginx: worker process"[0m
+             ├─[0;38;5;245m249870 "nginx: worker process"[0m
+             ├─[0;38;5;245m249871 "nginx: worker process"[0m
+             ├─[0;38;5;245m249872 "nginx: worker process"[0m
+             ├─[0;38;5;245m249873 "nginx: worker process"[0m
+             └─[0;38;5;245m249874 "nginx: worker process"[0m
+
+Jan 25 14:15:37 psy-nexus-production systemd[1]: Reloaded nginx.service - A high performance web server and a reverse proxy server.
+Jan 25 14:34:36 psy-nexus-production systemd[1]: Reloading nginx.service - A high performance web server and a reverse proxy server...
+Jan 25 14:34:36 psy-nexus-production nginx[68585]: 2026/01/25 14:34:36 [notice] 68585#68585: signal process started
+Jan 25 14:34:36 psy-nexus-production systemd[1]: Reloaded nginx.service - A high performance web server and a reverse proxy server.
+Jan 25 15:11:30 psy-nexus-production systemd[1]: Reloading nginx.service - A high performance web server and a reverse proxy server...
+Jan 25 15:11:30 psy-nexus-production nginx[86505]: 2026/01/25 15:11:30 [notice] 86505#86505: signal process started
+Jan 25 15:11:30 psy-nexus-production systemd[1]: Reloaded nginx.service - A high performance web server and a reverse proxy server.
+Jan 25 20:29:18 psy-nexus-production systemd[1]: Reloading nginx.service - A high performance web server and a reverse proxy server...
+Jan 25 20:29:18 psy-nexus-production nginx[249865]: 2026/01/25 20:29:18 [notice] 249865#249865: signal process started
+Jan 25 20:29:18 psy-nexus-production systemd[1]: Reloaded nginx.service - A high performance web server and a reverse proxy server.

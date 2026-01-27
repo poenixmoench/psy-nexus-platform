@@ -1,0 +1,150 @@
+--- PSY-NEXUS SYSTEM SNAPSHOT ---
+Timestamp: Sat Jan 24 12:14:10 PM UTC 2026
+
+CORE ARCHITECTURE:
+Host: Hetzner Cloud / Ubuntu 24.04
+Frontend: Vue.js 3 (Port 80/443 via Caddy/Nginx)
+Backend: Node.js/TypeScript (Port 3001)
+AI: Ollama Native (Port 11434) -> Qwen2.5-Coder:14b
+
+PROJECT STRUCTURE:
+.
+├── agent_config.yaml
+├── apps
+│   ├── backend
+│   │   ├──  
+│   │   ├── build
+│   │   ├── check_mongo_options.ts
+│   │   ├── db
+│   │   ├── Dockerfile
+│   │   ├── Dockerfile.bak
+│   │   ├── Dockerfile.dev
+│   │   ├── ecosystem.config.js
+│   │   ├── fix_index.ts
+│   │   ├── index.ts
+│   │   ├── jest.config.js
+│   │   ├── migrations
+│   │   ├── package.json
+│   │   ├── package-lock.json
+│   │   ├── prisma
+│   │   ├── prisma.config.ts
+│   │   ├── src
+│   │   ├── storage
+│   │   ├── tests
+│   │   ├── tsc
+│   │   └── tsconfig.json
+│   ├── frontend
+│   │   ├── default.conf
+│   │   ├── Dockerfile
+│   │   ├── Dockerfile.dev
+│   │   ├── FINAL_GOLD_BACKUP_DO_NOT_DELETE
+│   │   ├── index.html
+│   │   ├── package.json
+│   │   ├── package-lock.json
+│   │   ├── public
+│   │   ├── README.md
+│   │   ├── src
+│   │   ├── src_STABLE_GOLD
+│   │   ├── tsconfig.json
+│   │   ├── tsconfig.node.json
+│   │   ├── vite.config.js
+│   │   └── vite.config.ts
+│   └── web
+│       ├── assets
+│       ├── index.html
+│       └── src
+├── backend.log
+├── check_build.sh
+├── ci-cd
+│   └── workflows
+│       └── test.yml
+├── CURRENT_CONTEXT.txt
+├── db_dump_20251123_031458.sql
+├── db-init.sql
+├── deploy.sh
+├── deploy-skip-frontend.sh
+├── docker-compose.prod.yml
+├── docker-compose.yml
+├── docker-compose.yml.backup
+├── docker-compose.yml.bak
+├── Dockerfile
+├── docs
+│   ├── agents
+│   │   └── AGENTS_REFERENCE.md
+│   ├── GOLDEN-RULES-AGENT-INTEGRATION.v2.yaml
+│   └── workflows
+│       └── ENHANCED_MASTER_WORKFLOW.md
+├── environments
+│   └── production
+├── infrastructure
+│   ├── docker
+│   │   ├── apps
+│   │   ├── backend
+│   │   ├── Caddyfile
+│   │   ├── data
+│   │   ├── db_data
+│   │   ├── docker-compose-nginx.yml
+│   │   ├── docker-compose.yml
+│   │   ├── Dockerfile
+│   │   ├── eventQueries.ts
+│   │   ├── FINAL_FIX.sh
+│   │   ├── frontend
+│   │   ├── frontend-dist
+│   │   ├── index.html
+│   │   ├── nginx.conf
+│   │   ├── nginx-config
+│   │   ├── nginx-http-only.conf
+│   │   ├── nginx-no-ssl.conf
+│   │   ├── nginx-ssl.conf
+│   │   ├── nginx-ssl-fixed.conf
+│   │   ├── ollama_models
+│   │   ├── src
+│   │   ├── tsconfig.json
+│   │   ├── tsconfig.node.json
+│   │   └── vite.config.ts
+│   ├── nginx
+│   │   ├── gzip.conf
+│   │   ├── nginx.conf
+│   │   └── security.conf
+│   └── postgres
+│       └── init.sql
+├── init-scripts
+│   └── 01-init.sql
+├── monitoring
+│   └── prometheus
+│       └── prometheus.yml
+├── nginx
+│   └── conf
+│       └── default.conf
+├── nginx.conf
+├── package.json
+├── package-lock.json
+├── PRODUCTION_READY.md
+├── PRODUCTION_STATUS.md
+├── PSY-NEXUS-MONOREPO-STRUKTUR-PRODUCTION-2025-12-30.md
+├── README.md
+├── scripts
+│   ├── backup-all.sh
+│   └── init-db.sql
+├── ssl
+│   ├── cert.pem
+│   └── key.pem
+├── STYLE_GUIDE.md
+└── workspace
+
+45 directories, 78 files
+
+ACTIVE AGENTS IN BACKEND:
+BackendArchitectAgent.ts
+BaseAgent.ts
+definitions
+DesignAlchemistAgent.ts
+DialogAgent.ts
+DokumentationAgent.ts
+FrontendMeisterAgent.ts
+OptimizerAgent.ts
+OrionAgent.ts
+PlanAgent.ts
+QaGuruAgent.ts
+
+SNAPSHOT COMPLETED.

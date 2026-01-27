@@ -1,0 +1,156 @@
+version: "2.0"
+rules:
+  - id: phi-ratio-enforcement
+    category: geometry
+    priority: 1
+    enabled: true
+    description: "Verwende immer den goldenen Schnitt (Phi = 1.618033988749895) für geometrische Berechnungen, wenn nicht anders spezifiziert."
+    validator: "check_phi_ratio_usage"
+    transformer: null
+
+  - id: golden-angle-enforcement
+    category: geometry
+    priority: 1
+    enabled: true
+    description: "Verwende immer den Goldenen Winkel (137.50776405026477°) für Rotationen/Anordnungen, wenn nicht anders spezifiziert."
+    validator: "check_golden_angle_usage"
+    transformer: null
+
+  - id: no-emojis-allowed
+    category: output-format
+    priority: 2
+    enabled: true
+    description: "Keine Emojis in Outputs, Code oder Dateinamen. Ausnahme: Visuelle Darstellungen (z.B. SVG) dürfen Symbole enthalten, wenn sie funktional sind."
+    validator: "check_for_emojis"
+    transformer: "remove_emojis"
+
+  - id: code-block-enforcement
+    category: output-format
+    priority: 3
+    enabled: true
+    description: "Der FRONTEND-MEISTER gibt ausschließlich Codeblöcke aus (HTML, SVG, CSS, JS, TS)."
+    validator: "check_output_format_is_code_block"
+    transformer: null
+
+  - id: sacred-geometry-patterns
+    category: geometry
+    priority: 4
+    enabled: true
+    description: "Verfügbare Muster: Sri Yantra, Platonische Körper, Metatrons Würfel, Merkaba, Fraktale (z.B. Drachenkurve). Muss korrekt nach mathematischen Definitionen generiert werden."
+    validator: "check_sacred_geometry_accuracy"
+    transformer: null
+
+  - id: defense-in-depth-level1
+    category: security
+    priority: 5
+    enabled: true
+    description: "Ebene 1: Cursor Rules (Frontend-Filter)"
+    validator: "apply_cursor_rules"
+    transformer: null
+
+  - id: defense-in-depth-level2
+    category: security
+    priority: 5
+    enabled: true
+    description: "Ebene 2: Golden Rules (Wissensbasis)"
+    validator: "apply_golden_rules"
+    transformer: null
+
+  - id: defense-in-depth-level3
+    category: security
+    priority: 5
+    enabled: true
+    description: "Ebene 3: Globale User Rules (Backend-Orchestrierung)"
+    validator: "apply_global_user_rules"
+    transformer: null
+
+  - id: agent-communication-protocol
+    category: api
+    priority: 6
+    enabled: true
+    description: "API-Endpunkt: /api/agents/{agent-name}. Methoden: GET (Status), POST (Anfrage), WS (Streaming Antwort). Authentifizierung: JWT-Token (bei Bedarf)."
+    validator: "validate_agent_api_call"
+    transformer: null
+
+  - id: error-handling-logging
+    category: error-handling
+    priority: 7
+    enabled: true
+    description: "Jeder Agent protokolliert seine Aktionen in logs/{agent-name}.log. Bei Fehlern greift das System auf definierte Fallback-Logiken zurück."
+    validator: "check_logging_enabled"
+    transformer: null
+
+  - id: ethical-compliance-orion
+    category: ethics
+    priority: 8
+    enabled: true
+    description: "ORION ist verantwortlich für ethische Richtlinien. Agenten können ethische Fragen an ORION weiterleiten. Agenten treffen keine autonomen ethischen Entscheidungen."
+    validator: "forward_ethics_query_to_orion"
+    transformer: null
+
+# Validator/Transformer Functions (Beispiel, müssen separat implementiert werden)
+validators:
+  check_phi_ratio_usage: |
+    function(input: string): boolean {
+      // Prüft, ob geometrische Berechnungen Phi verwenden
+      return true; // Placeholder
+    }
+  check_golden_angle_usage: |
+    function(input: string): boolean {
+      // Prüft, ob geometrische Berechnungen Golden Angle verwenden
+      return true; // Placeholder
+    }
+  check_for_emojis: |
+    function(input: string): boolean {
+      // Prüft, ob Emojis im Input vorhanden sind (außer in SVG)
+      return !/(?:[\u2700-\u27bf]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff]|[\u0023-\u0039]\ufe0f?\u20e3|\ud83c[\udd70-\udd71]\ufe0f|\ud83c[\udd7e-\udd7f]\ufe0f|\ud83c\udd8e|\ud83c[\udd91-\udd9a]\ufe0f|\ud83c[\udde6-\uddff]){1}/.test(input);
+    }
+  check_output_format_is_code_block: |
+    function(input: string): boolean {
+      // Prüft, ob Output ein Code-Block ist
+      return /^```[\s\S]*```$/m.test(input);
+    }
+  check_sacred_geometry_accuracy: |
+    function(input: string): boolean {
+      // Prüft, ob geometrische Formen korrekt generiert wurden
+      return true; // Placeholder
+    }
+  validate_agent_api_call: |
+    function(endpoint: string, method: string): boolean {
+      // Prüft, ob API-Call gültig ist
+      return true; // Placeholder
+    }
+  check_logging_enabled: |
+    function(agentName: string): boolean {
+      // Prüft, ob Logging für Agenten aktiviert ist
+      return true; // Placeholder
+    }
+  forward_ethics_query_to_orion: |
+    function(query: string): boolean {
+      // Leitet ethische Frage an ORION weiter
+      return true; // Placeholder
+    }
+  apply_cursor_rules: |
+    function(input: string, context: any): { valid: boolean; processedInput: string; errors: string[] } {
+      // Wendet Cursor Rules an
+      return { valid: true, processedInput: input, errors: [] }; // Placeholder
+    }
+  apply_golden_rules: |
+    function(input: string, context: any): { valid: boolean; processedInput: string; errors: string[] } {
+      // Wendet Golden Rules an
+      return { valid: true, processedInput: input, errors: [] }; // Placeholder
+    }
+  apply_global_user_rules: |
+    function(input: string, context: any): { valid: boolean; processedInput: string; errors: string[] } {
+      // Wendet Globale User Rules an
+      return { valid: true, processedInput: input, errors: [] }; // Placeholder
+    }
+
+# Transformer Functions (Beispiel, müssen separat implementiert werden)
+transformers:
+  remove_emojis: |
+    function(input: string): string {
+      // Entfernt Emojis aus dem Input
+      return input.replace(/(?:[\u2700-\u27bf]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff]|[\u0023-\u0039]\ufe0f?\u20e3|\ud83c[\udd70-\udd71]\ufe0f|\ud83c[\udd7e-\udd7f]\ufe0f|\ud83c\udd8e|\ud83c[\udd91-\udd9a]\ufe0f|\ud83c[\udde6-\uddff]){1}/g, '');
+    }
+

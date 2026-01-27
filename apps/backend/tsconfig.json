@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "paths": {
+      "@shared/geometry": ["../../libs/shared/geometry/src"],
+      "@shared/geometry/*": ["../../libs/shared/geometry/src/*"],
+      "@shared/*": ["../../libs/shared/*"]
+    },
+    "types": ["node"] // Füge "express" hinzu, falls nötig, aber typ definitions sollten über include/typeRoots geladen werden
+  },
+  "include": [
+    "src/**/*",
+    "src/types/**/*", // Stellt sicher, dass globale Typdefinitionen wie express.d.ts gefunden werden
+    "../../libs/shared/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

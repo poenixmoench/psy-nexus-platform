@@ -1,0 +1,14 @@
+// Definiert den Typ des Benutzerobjekts, das an req.user angehängt wird
+interface UserPayload {
+    id: number;
+    email: string;
+    username: string; // Stelle sicher, dass dies mit CustomRequest übereinstimmt
+}
+
+// Erweitert das Express Request-Interface
+// Mache 'user' optional, damit es undefined sein kann, wenn nicht authentifiziert
+declare namespace Express {
+    export interface Request {
+        user?: UserPayload; // Optional gemacht
+    }
+}

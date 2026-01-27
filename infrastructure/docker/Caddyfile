@@ -1,0 +1,17 @@
+{
+    email poenix.moench8@gmail.com
+    # ... weitere globale Einstellungen, falls vorhanden
+}
+
+# 1. Frontend
+psy-nexus.live, www.psy-nexus.live {
+    # ... Ihre Konfiguration
+}
+# 2. API/Backend
+api.psy-nexus.live {
+    # ... Ihre Konfiguration
+}
+# 3. Chat
+chat.psy-nexus.live {
+    reverse_proxy librechat:3082
+}

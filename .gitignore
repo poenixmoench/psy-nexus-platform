@@ -1,0 +1,21 @@
+# Abhängigkeiten
+node_modules/
+dist/
+.env
+*.log
+
+# Backups & Temp (Wir sichern nur sauberen Code!)
+*_STABLE_GOLD/
+FINAL_GOLD_BACKUP_DO_NOT_DELETE/
+*.backup
+*.bak
+.DS_Store
+
+# OS-Müll
+.cache/
+
+# Datenbank-Rohdaten ausschließen
+db-data/
+postgres-data/
+*.sql
+!db-init.sql

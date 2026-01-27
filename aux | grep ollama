@@ -1,0 +1,23 @@
+[0;1;32m●[0m ollama.service - Ollama Service
+     Loaded: loaded (]8;;file://psy-nexus-production/etc/systemd/system/ollama.service/etc/systemd/system/ollama.service]8;;; [0;1;32menabled[0m; preset: [0;1;32menabled[0m)
+    Drop-In: /etc/systemd/system/ollama.service.d
+             └─]8;;file://psy-nexus-production/etc/systemd/system/ollama.service.d/override.confoverride.conf]8;;
+     Active: [0;1;32mactive (running)[0m since Sun 2026-01-25 13:26:49 UTC; 3h 18min ago
+   Main PID: 35796 (ollama)
+      Tasks: 22 (limit: 18690)
+     Memory: 13.9G (peak: 14.0G)
+        CPU: 40.344s
+     CGroup: /system.slice/ollama.service
+             ├─[0;38;5;245m 35796 /usr/local/bin/ollama serve[0m
+             └─[0;38;5;245m129312 /usr/local/bin/ollama runner --model /mnt/HC_Volume_103847079/ollama_data/.ollama/models/blobs/sha256-2049f5674b1e92b4464e5729975c9689fcfbf0b0e4443ccf10b5339f370f9a54 --port 35215[0m
+
+Jan 25 16:43:56 psy-nexus-production ollama[35796]: llama_kv_cache: size =  768.00 MiB (  4096 cells,  48 layers,  1/1 seqs), K (f16):  384.00 MiB, V (f16):  384.00 MiB
+Jan 25 16:43:56 psy-nexus-production ollama[35796]: llama_context: Flash Attention was auto, set to enabled
+Jan 25 16:43:56 psy-nexus-production ollama[35796]: llama_context:        CPU compute buffer size =   349.01 MiB
+Jan 25 16:43:56 psy-nexus-production ollama[35796]: llama_context: graph nodes  = 1639
+Jan 25 16:43:56 psy-nexus-production ollama[35796]: llama_context: graph splits = 1
+Jan 25 16:43:56 psy-nexus-production ollama[35796]: time=2026-01-25T16:43:56.406Z level=INFO source=server.go:1376 msg="llama runner started in 30.87 seconds"
+Jan 25 16:43:56 psy-nexus-production ollama[35796]: time=2026-01-25T16:43:56.406Z level=INFO source=sched.go:517 msg="loaded runners" count=1
+Jan 25 16:43:56 psy-nexus-production ollama[35796]: time=2026-01-25T16:43:56.406Z level=INFO source=server.go:1338 msg="waiting for llama runner to start responding"
+Jan 25 16:43:56 psy-nexus-production ollama[35796]: time=2026-01-25T16:43:56.407Z level=INFO source=server.go:1376 msg="llama runner started in 30.87 seconds"
+Jan 25 16:43:56 psy-nexus-production ollama[35796]: [GIN] 2026/01/25 - 16:43:56 | 200 |          1m3s |       127.0.0.1 | POST     "/api/generate"

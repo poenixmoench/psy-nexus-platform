@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  # =========================================================================
+  # PostgreSQL Database Service (KORRIGIERT)
+  # =========================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: psy-nexus-db
+    restart: always
+    environment:
+      POSTGRES_USER: psy_nexus_user
+      POSTGRES_PASSWORD: psy_nexus_password
+      POSTGRES_DB: psy_nexus_db
+      # FEHLERHAFTE ZEILE ENTFERNT: POSTGRES_INITDB_ARGS: "-c max_connections=100"
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U psy_nexus_user -d psy_nexus_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - psy-nexus-network
+
+  # =========================================================================
+  # Backend API Service
+  # =========================================================================
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile.dev
+    container_name: psy-nexus-backend
+    restart: on-failure
+    ports:
+      - "3001:3001"
+    environment:
+      # Docker-interner PostgreSQL-Zugriff (nicht localhost!)
+      DATABASE_URL: postgresql://psy_nexus_user:psy_nexus_password@postgres:5432/psy_nexus_db
+      NODE_ENV: development
+      PORT: 3001
+      API_BASE_URL: http://localhost:3001
+      FRONTEND_URL: http://localhost:5173
+      LOG_LEVEL: debug
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./apps/backend:/app
+      - /app/node_modules
+    networks:
+      - psy-nexus-network
+    command: npm run dev
+
+  # =========================================================================
+  # Frontend Development Server
+  # =========================================================================
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile.dev
+    container_name: psy-nexus-frontend
+    restart: on-failure
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_BASE_URL: http://localhost:3001
+    volumes:
+      - ./apps/frontend:/app
+      - /app/node_modules
+    networks:
+      - psy-nexus-network
+    command: npm run dev -- --host 0.0.0.0
+
+# =========================================================================
+# Volumes & Networks
+# =========================================================================
+volumes:
+  db_data:
+    driver: local
+
+networks:
+  psy-nexus-network:
+    driver: bridge
