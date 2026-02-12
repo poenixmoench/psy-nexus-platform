@@ -23,4 +23,3 @@ exports.COMPLEX_FORMS = {
         formula: "N_n = 3 * 4^n"
     }
 };
-//# sourceMappingURL=complex.js.map

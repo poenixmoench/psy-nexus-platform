@@ -1,0 +1,11 @@
+packages:
+  - apps/*
+  - libs/shared/*
+  - packages/shared
+
+ignoredBuiltDependencies:
+  - '@nestjs/core'
+  - '@prisma/engines'
+  - bcrypt
+  - esbuild
+  - prisma

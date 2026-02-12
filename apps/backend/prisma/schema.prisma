@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -11,4 +5,276 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+model agent_messages {
+  id             BigInt         @id @default(autoincrement())
+  session_id     String         @db.Uuid
+  role           String         @db.VarChar(20)
+  content        String
+  tokens_used    Int?           @default(0)
+  created_at     DateTime?      @default(now()) @db.Timestamptz(6)
+  agent_sessions agent_sessions @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_at], map: "idx_messages_created")
+  @@index([session_id], map: "idx_messages_session_id")
+}
+
+model agent_metrics {
+  id                String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  agent_id          String          @db.VarChar(100)
+  workflow_id       String          @db.Uuid
+  workflow_step_id  String?         @db.Uuid
+  sequence_number   Int?
+  phase_number      Int?
+  execution_time_ms Int?
+  input_tokens      Int?
+  output_tokens     Int?
+  cost_cents        Int?            @default(0)
+  success_rate      Float?
+  retry_count       Int?            @default(0)
+  memory_used_mb    Float?
+  cpu_time_ms       Int?
+  had_error         Boolean?        @default(false)
+  error_type        String?         @db.VarChar(100)
+  created_at        DateTime?       @default(now()) @db.Timestamp(6)
+  workflows         workflows       @relation(fields: [workflow_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  workflow_steps    workflow_steps? @relation(fields: [workflow_step_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([agent_id], map: "idx_agent_metrics_agent_id")
+  @@index([created_at(sort: Desc)], map: "idx_agent_metrics_created")
+  @@index([phase_number], map: "idx_agent_metrics_phase")
+  @@index([sequence_number], map: "idx_agent_metrics_sequence")
+  @@index([workflow_id], map: "idx_agent_metrics_workflow_id")
+}
+
+model agent_sessions {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  session_id     String           @unique @db.VarChar(255)
+  agent_id       String           @db.VarChar(100)
+  state          String?          @default("idle") @db.VarChar(50)
+  metadata       Json?            @default("{}")
+  created_at     DateTime?        @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime?        @default(now()) @db.Timestamptz(6)
+  agent_messages agent_messages[]
+
+  @@index([session_id], map: "idx_sessions_session_id")
+}
+
+model conversations {
+  id                 String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  workflow_id        String          @db.Uuid
+  workflow_step_id   String?         @db.Uuid
+  role               String          @db.VarChar(50)
+  agent_id           String?         @db.VarChar(100)
+  content            String
+  content_type       String?         @default("text") @db.VarChar(50)
+  is_streaming       Boolean?        @default(false)
+  streaming_complete Boolean?        @default(true)
+  metadata           Json?           @default("{}")
+  created_at         DateTime?       @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?       @default(now()) @db.Timestamp(6)
+  sequence_number    Int
+  workflows          workflows       @relation(fields: [workflow_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  workflow_steps     workflow_steps? @relation(fields: [workflow_step_id], references: [id], onUpdate: NoAction)
+
+  @@index([created_at(sort: Desc)], map: "idx_conversations_created")
+  @@index([role], map: "idx_conversations_role")
+  @@index([workflow_id], map: "idx_conversations_workflow_id")
+  @@index([workflow_id, sequence_number], map: "idx_conversations_workflow_sequence")
+  @@index([workflow_step_id], map: "idx_conversations_workflow_step_id")
+}
+
+model deployment_records {
+  id                       String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  workflow_id              String               @db.Uuid
+  deployment_platform      String?              @db.VarChar(100)
+  deployment_url           String?              @db.VarChar(500)
+  deployment_status        String?              @db.VarChar(50)
+  deployed_artifacts       String[]             @default([]) @db.Uuid
+  build_time_ms            Int?
+  build_log                String?
+  previous_deployment_id   String?              @db.Uuid
+  created_at               DateTime?            @default(now()) @db.Timestamp(6)
+  deployed_at              DateTime?            @db.Timestamp(6)
+  deployment_records       deployment_records?  @relation("deployment_recordsTodeployment_records", fields: [previous_deployment_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_deployment_records deployment_records[] @relation("deployment_recordsTodeployment_records")
+  workflows                workflows            @relation(fields: [workflow_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([deployment_status], map: "idx_deployment_records_status")
+  @@index([workflow_id], map: "idx_deployment_records_workflow_id")
+}
+
+model project_artifacts {
+  id                      String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  workflow_id             String              @db.Uuid
+  artifact_type           String              @db.VarChar(100)
+  artifact_name           String?             @db.VarChar(255)
+  artifact_path           String?             @db.VarChar(500)
+  content                 String
+  content_hash            String?             @db.VarChar(64)
+  is_valid                Boolean?            @default(true)
+  validation_errors       Json?
+  code_quality_score      Float?
+  version_number          Int?                @default(1)
+  previous_version_id     String?             @db.Uuid
+  generated_by_phase      Int?
+  generated_by_agent      String?             @db.VarChar(100)
+  dependencies            Json?
+  created_at              DateTime?           @default(now()) @db.Timestamp(6)
+  updated_at              DateTime?           @default(now()) @db.Timestamp(6)
+  project_artifacts       project_artifacts?  @relation("project_artifactsToproject_artifacts", fields: [previous_version_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_project_artifacts project_artifacts[] @relation("project_artifactsToproject_artifacts")
+  workflows               workflows           @relation(fields: [workflow_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([artifact_type], map: "idx_project_artifacts_artifact_type")
+  @@index([content_hash], map: "idx_project_artifacts_content_hash")
+  @@index([created_at(sort: Desc)], map: "idx_project_artifacts_created")
+  @@index([workflow_id], map: "idx_project_artifacts_workflow_id")
+  @@index([workflow_id, artifact_type], map: "idx_project_artifacts_workflow_type")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model tasks {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id             String   @db.Uuid
+  agent_type          String   @db.VarChar(50)
+  status              String   @default("PENDING") @db.VarChar(20)
+  initial_prompt      String
+  current_step        Int?     @default(1)
+  progress_percentage Int?     @default(0)
+  created_at          DateTime @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime @default(now()) @db.Timestamptz(6)
+  users               users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model users {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email             String?             @unique
+  created_at        DateTime?           @default(now()) @db.Timestamptz(6)
+  tasks             tasks[]
+  workflow_sessions workflow_sessions[]
+  workflows         workflows[]
+
+  @@index([created_at(sort: Desc)], map: "idx_users_created")
+  @@index([email], map: "idx_users_email")
+}
+
+model workflow_sessions {
+  id                  String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  user_id             String     @db.Uuid
+  session_token       String     @unique @db.VarChar(500)
+  session_name        String?    @db.VarChar(255)
+  current_workflow_id String?    @db.Uuid
+  created_at          DateTime?  @default(now()) @db.Timestamp(6)
+  last_activity       DateTime?  @default(now()) @db.Timestamp(6)
+  expires_at          DateTime?  @db.Timestamp(6)
+  is_active           Boolean?   @default(true)
+  metadata            Json?      @default("{}")
+  workflows           workflows? @relation(fields: [current_workflow_id], references: [id], onUpdate: NoAction)
+  users               users      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([is_active], map: "idx_workflow_sessions_active")
+  @@index([session_token], map: "idx_workflow_sessions_token")
+  @@index([user_id], map: "idx_workflow_sessions_user_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model workflow_steps {
+  id                   String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  workflow_id          String           @db.Uuid
+  sequence_number      Int
+  phase_number         Int
+  phase_level          String?          @default("main") @db.VarChar(20)
+  agent_id             String           @db.VarChar(100)
+  agent_name           String?          @db.VarChar(255)
+  status               String?          @default("pending") @db.VarChar(50)
+  attempt_count        Int?             @default(0)
+  max_retries          Int?             @default(3)
+  input_data           Json?
+  output_data          Json?
+  code_language        String?          @db.VarChar(50)
+  code_content         String?
+  code_quality_score   Float?
+  started_at           DateTime?        @db.Timestamp(6)
+  completed_at         DateTime?        @db.Timestamp(6)
+  duration_ms          Int?             @default(0)
+  error_message        String?
+  error_details        Json?
+  previous_step_id     String?          @db.Uuid
+  depends_on_steps     String[]         @default([]) @db.Uuid
+  validation_status    String?          @db.VarChar(50)
+  validation_errors    Json?
+  metadata             Json?            @default("{}")
+  created_at           DateTime?        @default(now()) @db.Timestamp(6)
+  updated_at           DateTime?        @default(now()) @db.Timestamp(6)
+  agent_metrics        agent_metrics[]
+  conversations        conversations[]
+  workflow_steps       workflow_steps?  @relation("workflow_stepsToworkflow_steps", fields: [previous_step_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_workflow_steps workflow_steps[] @relation("workflow_stepsToworkflow_steps")
+  workflows            workflows        @relation(fields: [workflow_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([agent_id], map: "idx_workflow_steps_agent")
+  @@index([created_at(sort: Desc)], map: "idx_workflow_steps_created")
+  @@index([phase_number], map: "idx_workflow_steps_phase")
+  @@index([phase_level], map: "idx_workflow_steps_phase_level")
+  @@index([workflow_id, sequence_number], map: "idx_workflow_steps_sequence")
+  @@index([status], map: "idx_workflow_steps_status")
+  @@index([workflow_id], map: "idx_workflow_steps_workflow_id")
+  @@index([workflow_id, phase_number], map: "idx_workflow_steps_workflow_phase")
+  @@index([workflow_id, status], map: "idx_workflow_steps_workflow_status")
+}
+
+model workflows {
+  id                   String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  user_id              String               @db.Uuid
+  title                String               @db.VarChar(255)
+  description          String?
+  status               String?              @default("discovery") @db.VarChar(50)
+  current_phase        Int?                 @default(1)
+  current_sequence     Int?                 @default(0)
+  phases_completed     Int[]                @default([])
+  created_at           DateTime?            @default(now()) @db.Timestamp(6)
+  updated_at           DateTime?            @default(now()) @db.Timestamp(6)
+  started_at           DateTime?            @db.Timestamp(6)
+  completed_at         DateTime?            @db.Timestamp(6)
+  total_duration_ms    Int?                 @default(0)
+  initial_requirements String?
+  target_design        String?              @db.VarChar(50)
+  is_public            Boolean?             @default(false)
+  is_archived          Boolean?             @default(false)
+  metadata             Json?                @default("{}")
+  agent_metrics        agent_metrics[]
+  conversations        conversations[]
+  deployment_records   deployment_records[]
+  project_artifacts    project_artifacts[]
+  workflow_sessions    workflow_sessions[]
+  workflow_steps       workflow_steps[]
+  users                users                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_at(sort: Desc)], map: "idx_workflows_created")
+  @@index([current_phase], map: "idx_workflows_phase")
+  @@index([status], map: "idx_workflows_status")
+  @@index([user_id], map: "idx_workflows_user_id")
+  @@index([user_id, status], map: "idx_workflows_user_status")
+}
+
+model Agents {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String
+  status       String?   @default("online")
+  type         String?   @default("general")
+  capabilities Json?     @default("[]")
+  last_active  DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model stigmergy_tags {
+  id           String    @id @db.Uuid
+  source_agent String
+  tag_type     String
+  payload      Json
+  timestamp    BigInt
+  ttl          Int?
+
+  @@index([timestamp], map: "idx_stigmergy_timestamp")
 }

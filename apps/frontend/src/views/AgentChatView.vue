@@ -27,6 +27,7 @@
   </div>
 </template>
 <script setup lang="ts">
+import { AGENT_PROFILES } from "@shared/config/agent-profiles";
 import { ref, onMounted, nextTick } from 'vue';
 import { useAuthStore } from '../stores/authStore';
 import { useWebSocketStore } from '../stores/webSocketStore';
@@ -35,6 +36,7 @@ const wsStore = useWebSocketStore();
 const authStore = useAuthStore();
 const userInput = ref('');
 const isLoading = ref(false);
+const activeAgentKey = ref("ORION_AGENT");
 const chatArea = ref<HTMLElement | null>(null);
 const agentMessageId = ref<number | null>(null);
 let messageIdCounter = 2; // Startzähler nach der initialen Nachricht
@@ -48,7 +50,7 @@ interface ChatMessage {
 }
 
 const chatHistory = ref<ChatMessage[]>([
-  { id: 1, sender: 'System', content: 'Willkommen im Agent Chat. Der ProjectOrchestrator (🎼) ist bereit!', isUser: false, isStreaming: false }
+  { id: 1, sender: 'System', content: `Willkommen im Agent Chat. ${AGENT_PROFILES.OrionAgent.role} ist bereit!`, isUser: false, isStreaming: false }
 ]);
 
 const scrollToBottom = () => {
@@ -75,7 +77,7 @@ const sendMessage = async () => {
   agentMessageId.value = messageIdCounter++;
   const agentMessage: ChatMessage = {
     id: agentMessageId.value,
-    sender: 'ProjectOrchestrator 🎼',
+    sender: AGENT_PROFILES.OrionAgent.name,
     content: 'Agenten-Task wird gestartet...',
     isUser: false,
     isStreaming: true
@@ -85,17 +87,36 @@ const sendMessage = async () => {
 
   try {
     // 🚀 KORREKTUR: Hartcodierte localhost:3001-URL durch den relativen Pfad /api ersetzt.
-    const response = await fetch('/api/agents/CodeAnalyzerAgent/execute', { 
+    const response = await fetch('/api/orchestrate/stream', { 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${authStore.getToken()}`,
       },
-      body: JSON.stringify({ input: userMessage }),
+      body: JSON.stringify({ input: userMessage, userGoal: userMessage, agent: 'ORION_AGENT' }),
     });
 
     if (!response.ok) {
       throw new Error(`API returned status ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+    
+    if (reader) {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        const responseIndex = chatHistory.value.findIndex(m => m.id === agentMessageId.value);
+        if (responseIndex !== -1) {
+          chatHistory.value[responseIndex].content += chunk;
+          scrollToBottom();
+        }
+      }
+      const finalIndex = chatHistory.value.findIndex(m => m.id === agentMessageId.value);
+      if (finalIndex !== -1) chatHistory.value[finalIndex].isStreaming = false;
     }
 
   } catch (error: any) {

@@ -1,46 +1,61 @@
+import "module-alias/register";
+import * as path from "path";
+const moduleAlias = require("module-alias");
+
+const isProd = __filename.includes('dist');
+const baseDir = path.join(__dirname, '../../../../');
+
+// KORREKTUR: Im Prod-Modus (dist) gibt es keinen /src Unterordner in den Libs
+moduleAlias.addAliases({
+  '@shared/basis-agent': path.join(baseDir, isProd ? 'dist/libs/shared/basis-agent' : 'libs/shared/basis-agent/src'),
+  '@shared/geometry': path.join(baseDir, isProd ? 'dist/libs/shared/geometry' : 'libs/shared/geometry/src'),
+  '@shared/types': path.join(baseDir, isProd ? 'dist/packages/shared/src/types' : 'packages/shared/src/types'),
+  '@shared': path.join(baseDir, isProd ? 'dist/packages/shared/src' : 'packages/shared/src')
+});
+
+import 'reflect-metadata';
+import { container } from 'tsyringe';
 import express from 'express';
-import path from 'path';
-import { connectDB } from './db/connection';
-import { setupUserTable } from './db/userQueries';
-import { setupEventTable } from './db/eventQueries';
-import { authRoutes } from './routes/authRoutes';
-import { eventRoutes } from './routes/eventRoutes';
-import { healthRoutes } from './routes/health';
+import http from 'http';
+import cors from 'cors';
+import { setupDIContainer } from './di/container';
+import { SocketService } from './services/SocketService';
+import apiRoutes from './routes/index';
 
-const app = express();
+async function bootstrap() {
+  try {
+    setupDIContainer();
+    const app = express();
+    app.use(cors({ origin: "*" }));
+    app.use(express.json({ limit: '10mb' }));
 
-async function initializeApp() {
-    console.log('🚀 Initializing application...');
-    await connectDB();
-    console.log('📋 Setting up database tables...');
-    await setupUserTable();
-    await setupEventTable();
-    console.log('✅ Database setup complete.');
+    const server = http.createServer(app);
+    const socketService = container.resolve(SocketService);
+
+    socketService.init(server);
+    app.use('/api', apiRoutes);
+
+    const PORT = process.env.PORT || 3005;
+    const httpServer = server.listen(PORT, () => {
+      console.log(`🚀 Nexus-Backend stabilisiert auf Port ${PORT} (${isProd ? 'PRODUCTION' : 'DEV'})`);
+    });
+
+    // PROFESSIONELLES SIGNAL-HANDLING
+    const shutdown = () => {
+      console.log('🛑 Shutdown-Signal empfangen. Schließe Verbindungen...');
+      httpServer.close(() => {
+        console.log('👋 Nexus-Backend ordnungsgemäß beendet.');
+        process.exit(0);
+      });
+    };
+
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
+
+  } catch (error) {
+    console.error('💥 Bootstrap-Fehler:', error);
+    process.exit(1);
+  }
 }
 
-initializeApp().then(() => {
-    app.use(express.json());
-    
-    // ✅ Static files aus /app/public
-    const publicPath = path.join(__dirname, '..', 'public');
-    console.log(`📂 Serving static files from: ${publicPath}`);
-    app.use(express.static(publicPath));
-    
-    // API Routes
-    app.use('/auth', authRoutes);
-    app.use('/api/events', eventRoutes);
-    app.use('/api/health', healthRoutes);
-    
-    // ✅ Fallback für React Router
-    app.get('*', (req, res) => {
-        res.sendFile(path.join(publicPath, 'index.html'));
-    });
-
-    app.listen(3000, () => {
-        console.log('✨ Backend server running on port 3000');
-        console.log('🌐 Frontend served from /app/public');
-    });
-}).catch(err => {
-    console.error('❌ Failed to initialize:', err);
-    process.exit(1);
-});
+bootstrap();

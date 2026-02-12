@@ -39,7 +39,7 @@ router.get('/api/gallery', async (req: Request, res: Response) => {
 
 router.get('/api/gallery/:id', async (req: Request, res: Response) => {
   try {
-    const item = await publishedItemsQueries.getPublishedItemById(req.params.id);
+    const item = await publishedItemsQueries.getPublishedItemById(req.params.id as string);
     if (!item) return res.status(404).json({ error: 'Not found' });
     res.json({ success: true, item });
   } catch (error) {

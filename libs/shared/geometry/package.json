@@ -1,0 +1,14 @@
+{
+  "name": "@psy-nexus-platform/shared-geometry",
+  "version": "1.0.0",
+  "description": "Geometrie-Engine für Psy-Nexus",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc --build",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,24 +1,20 @@
+import 'reflect-metadata';
 import { Router } from 'express';
-import { handleAgentRequest } from '../controllers/ollama-proxy.controller';
-import { requireAgentAccess } from '../middleware/agentAuth';
+import { container } from 'tsyringe';
+import { AgentService } from '../services/AgentService';
 
 const router = Router();
 
-// Nur für den geschützten Agentenbereich zugänglich
-router.get('/', requireAgentAccess, (req, res) => {
-    const agents = [
-        { id: "ORION", name: "Orion", role: "Orchestrator" },
-        { id: "PLAN-AGENT", name: "Plan-Agent", role: "Strategie" },
-        { id: "DESIGN-ALCHEMIST", name: "Design Alchemist", role: "UI/UX" },
-        { id: "FRONTEND-MEISTER", name: "Frontend Meister", role: "Frontend" },
-        { id: "BACKEND-ARCHITEKT", name: "Backend Architekt", role: "Backend" },
-        { id: "QA-GURU", name: "QA Guru", role: "Qualität" },
-        { id: "OPTIMIERER", name: "Optimierer", role: "Performance" },
-        { id: "DOKUMENTATION-AGENT", name: "Dokumentator", role: "Docs" }
-    ];
+// Geändert von '/list' auf '/'
+router.get('/', async (req, res) => {
+  try {
+    const agentService = container.resolve(AgentService);
+    const agents = await agentService.getAllAgents();
     res.json(agents);
+  } catch (error: any) {
+    console.error('❌ Fehler beim Laden der Agenten:', error.message);
+    res.status(500).json({ error: error.message });
+  }
 });
-
-router.post('/chat', requireAgentAccess, handleAgentRequest);
 
 export default router;

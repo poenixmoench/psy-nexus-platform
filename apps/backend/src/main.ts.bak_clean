@@ -1,0 +1,67 @@
+import path from "path";
+import fs from "fs";
+import "module-alias/register";
+import 'reflect-metadata';
+import { container } from 'tsyringe';
+import express from 'express';
+import http from 'http';
+import cors from 'cors';
+import { setupDIContainer } from './di/container';
+import agentController from './controllers/agent.controller';
+import agentsRouter from './controllers/agents.controller';
+import { SocketService } from './services/SocketService';
+
+setupDIContainer();
+const app = express();
+
+app.use((req, res, next) => {
+  const reqId = req.headers['x-request-id'] || 'local-dev';
+  console.log(`[${new Date().toISOString()}] [REQ-ID: ${reqId}] ${req.method} ${req.url}`);
+  next();
+});
+
+// ROBUSTE PFAD-LOGIK FÜR DEINE STRUKTUR
+const publicPath = path.resolve(__dirname, '..', 'public');
+console.log(`📂 Erwarteter Public-Pfad: ${publicPath}`);
+if (!fs.existsSync(publicPath)) {
+    console.error("⚠️ WARNUNG: Public Ordner nicht gefunden unter:", publicPath);
+}
+
+app.use(express.static(publicPath));
+app.use(cors({ origin: "*" }));
+app.use(express.json());
+
+// API Routen - Wir registrieren sie doppelt, um Nginx-Präfixe abzufangen
+app.use('/api/agent', agentController);
+app.use('/agent', agentController);
+app.use('/api/agents', agentsRouter);
+app.use('/agents', agentsRouter);
+
+app.get(['/api/health', '/health'], (req, res) => {
+  res.json({ status: 'online', system: 'PSY-NEXUS-CORE', timestamp: new Date().toISOString() });
+});
+
+const httpServer = http.createServer(app);
+const PORT = process.env.PORT || 3001;
+
+app.get("*", (req, res) => {
+  const indexPath = path.join(publicPath, "index.html");
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).json({ error: "Frontend Assets missing", path: indexPath });
+  }
+});
+
+httpServer.listen(Number(PORT), '0.0.0.0', () => {
+  console.log(`🚀 Server aktiv auf Port ${PORT}`);
+  setTimeout(() => {
+    try {
+      const socketService = container.resolve(SocketService);
+      socketService.init(httpServer);
+      console.log("🔌 SOCKET-ENGINE AKTIVIERT.");
+    } catch (error) {
+      console.error("❌ Socket-Fehler:", error);
+    }
+  }, 500);
+});

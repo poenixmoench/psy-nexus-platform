@@ -1,72 +1,70 @@
 #!/bin/bash
 
-set -e
+# --- KONFIGURATION ---
+PROJECT_ROOT="/root/psy-nexus-platform"
+BACKEND_DIR="$PROJECT_ROOT/apps/backend"
+FRONTEND_DIR="$PROJECT_ROOT/apps/frontend"
+TARGET_LINK="$BACKEND_DIR/dist/apps/backend/public"
+BACKUP_DIR="$PROJECT_ROOT/apps/backup_last_stable"
+LOG_FILE="/var/log/psy-nexus-deploy.log"
+PORT=3001
 
-echo "🚀 PSY-NEXUS Production Deployment Starting..."
-echo "⏰ Timestamp: $(date)"
+# --- ROLLBACK FUNKTION ---
+rollback() {
+    echo -e "\n🚨 ROLLBACK EINGELEITET! Stelle letzten stabilen Stand wieder her..." | tee -a "$LOG_FILE"
+    if [ -d "$BACKUP_DIR" ]; then
+        rm -rf "$BACKEND_DIR/dist"
+        cp -r "$BACKUP_DIR" "$BACKEND_DIR/dist"
+        pm2 reload psy-backend --update-env
+        echo "✅ Rollback abgeschlossen. System läuft wieder auf altem Stand." | tee -a "$LOG_FILE"
+    else
+        echo "❌ KRITISCH: Kein Backup gefunden! System-Integrität gefährdet." | tee -a "$LOG_FILE"
+    fi
+    exit 1
+}
 
-# Check Docker
-echo "✅ Checking Docker installation..."
-docker --version
-docker-compose --version
+# Fehler-Trap
+trap 'echo "Fehler in Zeile $LINENO"; exit 1' ERR
 
-# Build Frontend
-echo "🏗️  Building Frontend..."
-cd apps/web
-npm install
-npm run build
-cd ../..
+echo "----------------------------------------------------"
+echo "🛡️  PSY-NEXUS IRON-RETURN DEPLOYMENT"
+echo "----------------------------------------------------"
 
-# Create volumes
-echo "📁 Creating Docker volumes..."
-docker volume create psy-nexus-db || true
-docker volume create psy-nexus-ollama || true
+# 1. SICHERUNG
+echo "💾 Erstelle Backup des aktuellen Stands..."
+mkdir -p "$BACKUP_DIR"
+if [ -d "$BACKEND_DIR/dist" ]; then
+    # Wir löschen das alte Backup und erstellen ein frisches
+    rm -rf "$BACKUP_DIR/*"
+    cp -r "$BACKEND_DIR/dist/." "$BACKUP_DIR/"
+fi
 
-# Start Services
-echo "🚀 Starting Docker services..."
-docker-compose -f docker-compose.prod.yml down || true
-docker-compose -f docker-compose.prod.yml up -d
+# 2. BUILD-PHASE
+echo "📦 Baue Frontend & Backend..."
+cd "$FRONTEND_DIR" && npm run build
+cd "$BACKEND_DIR" && npm run build
 
-# Wait for services
-echo "⏳ Waiting for services to start..."
-sleep 10
+# 3. SYMLINK
+echo "🔗 Update Symlinks..."
+mkdir -p $(dirname "$TARGET_LINK")
+ln -sf "$FRONTEND_DIR/dist" "$TARGET_LINK"
 
-# Initialize Database
-echo "🗄️  Initializing database..."
-docker-compose -f docker-compose.prod.yml exec -T postgres psql -U psynexus -d psy_nexus -f /dev/stdin < db-init.sql
+# 4. RELOAD (Hier war der Fehler gefixt)
+echo "🔄 PM2 Reload..."
+pm2 reload psy-backend --update-env || pm2 start "$BACKEND_DIR/dist/apps/backend/src/main.js" --name psy-backend
 
-# Pull Ollama Model
-echo "🤖 Pulling Ollama model (first time only)..."
-docker-compose -f docker-compose.prod.yml exec -T ollama ollama pull qwen2.5-coder:14b || true
+# 5. HEALTH-CHECK MIT ROLLBACK-TRIGGER
+echo "🩺 Verifiziere Integrität..."
+sleep 3
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$PORT/ || echo "000")
 
-# Health Checks
-echo "🏥 Running health checks..."
+if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 304 ]; then
+    echo "✅ Health-Check bestanden (HTTP $HTTP_STATUS)"
+    echo "[$(date)] Deploy Erfolg" >> "$LOG_FILE"
+else
+    rollback 
+fi
 
-# Check Backend
-BACKEND_HEALTH=$(curl -s http://localhost:3000/api/health | grep -q "ok" && echo "✅" || echo "❌")
-echo "Backend Health: $BACKEND_HEALTH"
-
-# Check Database
-DB_HEALTH=$(docker-compose -f docker-compose.prod.yml exec -T postgres pg_isready -U psynexus | grep -q "accepting" && echo "✅" || echo "❌")
-echo "Database Health: $DB_HEALTH"
-
-# Check Ollama
-OLLAMA_HEALTH=$(curl -s http://localhost:11434/api/tags | grep -q "models" && echo "✅" || echo "❌")
-echo "Ollama Health: $OLLAMA_HEALTH"
-
-echo ""
-echo "🎉 DEPLOYMENT COMPLETE!"
-echo ""
-echo "📍 Service URLs:"
-echo "   Frontend:  https://psy-nexus.com"
-echo "   API:       https://psy-nexus.com/api"
-echo "   WebSocket: wss://psy-nexus.com/api/agents/ws"
-echo ""
-echo "📊 Docker Services:"
-docker-compose -f docker-compose.prod.yml ps
-echo ""
-echo "📝 Logs:"
-echo "   Backend:   docker-compose -f docker-compose.prod.yml logs -f backend"
-echo "   Database:  docker-compose -f docker-compose.prod.yml logs -f postgres"
-echo "   Ollama:    docker-compose -f docker-compose.prod.yml logs -f ollama"
-echo "   Nginx:     docker-compose -f docker-compose.prod.yml logs -f nginx"
+echo "----------------------------------------------------"
+echo "✨ SYSTEM IMMUNISIERT UND AKTUALISIERT"
+echo "----------------------------------------------------"

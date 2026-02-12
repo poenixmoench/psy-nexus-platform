@@ -1,0 +1,56 @@
+🔍 START: Monorepo Deep-Scan
+==================================
+Datum: Thu Feb 12 10:59:24 UTC 2026
+📁 WORKSPACE STRUKTUR
+packages:
+  - apps/*
+  - libs/shared/*
+  - packages/shared
+
+ignoredBuiltDependencies:
+  - '@nestjs/core'
+  - '@prisma/engines'
+  - bcrypt
+  - esbuild
+  - prisma
+
+📦 PACKAGE STRUKTUR
+=== ./package.json ===
+psy-nexus-platform-root
+=== ./libs/shared/geometry/package.json ===
+@psy-nexus-platform/shared-geometry
+=== ./apps/backend/node_modules/.ignored/ws/package.json ===
+ws
+=== ./apps/backend/dist/packages/shared/src/config/package.json ===
+@shared/config
+=== ./apps/backend/dist/libs/shared/geometry/package.json ===
+@shared/geometry
+=== ./apps/backend/dist/libs/shared/basis-agent/package.json ===
+@shared/basis-agent
+=== ./apps/backend/package.json ===
+psy-nexus-backend
+=== ./apps/frontend/package.json ===
+frontend
+
+⚙️ TS CONFIGURATION (Base Paths)
+    "paths": {
+      "@shared/basis-agent": ["libs/shared/basis-agent/src/index.ts"],
+      "@shared/geometry": ["libs/shared/geometry/src/index.ts"],
+      "@shared/types/*": ["packages/shared/src/types/*"],
+      "@shared/config/*": ["packages/shared/src/config/*"],
+      "@shared/*": ["packages/shared/src/*"]
+    }
+  },
+  "exclude": ["node_modules", "dist"]
+}
+
+🤖 AGENTEN-CHECK (Physische Präsenz)
+
+👻 POTENZIELLE FRAGMENTE (>1MB & Backups)
+   644245      4 -rw-r--r--   1 root     root         1696 Dec 30 22:03 ./init-scripts/01-init.sql
+   644138      4 -rw-r--r--   1 root     root         2960 Dec 30 22:03 ./db-init.sql
+   641410      4 -rw-r--r--   1 root     root          131 Dec 26 16:55 ./db_dump_20251123_031458.sql
+   664973      4 -rw-r--r--   1 root     root          434 Jan 30 01:50 ./backups/crontab_2026-01-30.bak
+   644266      4 -rw-r--r--   1 root     root         1924 Dec 30 22:03 ./scripts/init-db.sql
+
+🔍 SCAN ABGESCHLOSSEN

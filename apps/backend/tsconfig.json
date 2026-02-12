@@ -1,23 +1,29 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": "./src",
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
     "outDir": "./dist",
+    "rootDir": "../../",
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "baseUrl": ".",
     "paths": {
-      "@shared/geometry": ["../../libs/shared/geometry/src"],
-      "@shared/geometry/*": ["../../libs/shared/geometry/src/*"],
-      "@shared/*": ["../../libs/shared/*"]
-    },
-    "types": ["node"] // Füge "express" hinzu, falls nötig, aber typ definitions sollten über include/typeRoots geladen werden
+      "@shared/basis-agent": ["../../libs/shared/basis-agent/src/index.ts"],
+      "@shared/geometry": ["../../libs/shared/geometry/src/index.ts"],
+      "@shared/config/*": ["../../packages/shared/src/config/*"],
+      "@shared/*": ["../../packages/shared/src/*"],
+      "@shared/types/*": ["../../packages/shared/src/types/*"]
+    }
   },
   "include": [
     "src/**/*",
-    "src/types/**/*", // Stellt sicher, dass globale Typdefinitionen wie express.d.ts gefunden werden
-    "../../libs/shared/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
+    "../../packages/shared/src/**/*",
+    "../../libs/shared/basis-agent/src/**/*",
+    "../../libs/shared/geometry/src/**/*"
   ]
 }

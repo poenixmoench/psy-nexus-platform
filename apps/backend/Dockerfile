@@ -1,36 +1,24 @@
-# Stage 1: Build Stage
-FROM node:18-alpine AS builder
-
+# Stage 1: Build
+FROM node:22-alpine AS builder
 WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies
-RUN npm ci
-
-# Copy source code
 COPY . .
+RUN npm install
+# Wir bauen das Backend mit dem spezifischen Projektpfad
+RUN npx tsc -p apps/backend/tsconfig.json
 
-# Build the application
-RUN npm run build
-
-# Stage 2: Production Stage
-FROM node:18-alpine AS production
-
+# Stage 2: Production
+FROM node:22-alpine AS production
 WORKDIR /app
 
-# Copy node_modules from builder stage
+# Kopiere die Abhängigkeiten aus der Root (wegen Hoisting)
 COPY --from=builder /app/node_modules ./node_modules
+# Kopiere das Backend-Verzeichnis inklusive des neuen dist-Ordners
+COPY --from=builder /app/apps/backend ./apps/backend
 
-# Copy built application from builder stage
-COPY --from=builder /app/dist ./dist
-
-# Copy package.json and package-lock.json from builder stage
-COPY --from=builder /app/package*.json ./
-
-# Expose port
 EXPOSE 3000
 
-# Command to run the application
-CMD ["node", "dist/index.js"]
+# Wir setzen das Arbeitsverzeichnis direkt in den Backend-Ordner
+WORKDIR /app/apps/backend
+
+# STARTBEFEHL: Exakt angepasst an deine 'find'-Ausgabe
+CMD ["node", "dist/apps/backend/src/index.js"]

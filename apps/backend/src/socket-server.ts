@@ -1,28 +1,34 @@
 import http from 'http';
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
+import express from 'express';
+import cors from 'cors';
 import axios, { AxiosRequestConfig } from 'axios';
-import { Readable } from 'stream';
+import agentRoutes from './routes/agentRoutes';
 
-const io = new Server(3002, {
+const CORE_URL = process.env.CORE_URL || 'http://localhost:3001';
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// Hier binden wir die Route ein, die den 404 killt
+app.use('/api/agents', agentRoutes);
+
+const server = http.createServer(app);
+const io = new Server(server, {
     cors: {
-        origin: "*", // ACHTUNG: Nur für Entwicklung, im Produktivbetrieb spezifizieren
+        origin: "*",
         methods: ["GET", "POST"]
     }
 });
 
-const CORE_URL = process.env.CORE_API_URL || 'http://localhost:3001'; // Konfigurierbare Core-URL
-
-io.on('connection', (socket: Socket) => {
+io.on('connection', (socket) => {
     console.log('🔌 Socket-Verbindung hergestellt:', socket.id);
 
     socket.on('agent-message', async (data) => {
-        console.log('📨 Nachricht erhalten, leite an Core weiter:', data);
-
         const agentName = data.agentName || data.agent || 'Orion';
         const userPrompt = data.message || data.prompt;
 
         if (!userPrompt) {
-            console.warn('⚠️ Kein Prompt erhalten von Socket', socket.id);
             socket.emit('agent-error', { message: 'Kein Prompt erhalten.' });
             return;
         }
@@ -31,70 +37,43 @@ io.on('connection', (socket: Socket) => {
             const config: AxiosRequestConfig = {
                 method: 'post',
                 url: `${CORE_URL}/api/agents/chat`,
-                data: {
-                    agentName: agentName,
-                    prompt: userPrompt
-                },
-                responseType: 'stream', // Wichtig für Streaming
-                // Optional: Timeout
-                timeout: 300000, // 5 Minuten
+                data: { agentName, prompt: userPrompt },
+                responseType: 'stream',
+                timeout: 300000,
             };
 
             const coreResponse = await axios(config);
-
-            // Event-Listener für den Core-Stream
-            let buffer = ''; // Puffer für teilweise Zeilen
-            let doneEmitted = false; // Verhindert mehrfaches 'done'
+            let buffer = '';
+            let doneEmitted = false;
 
             coreResponse.data.on('data', (chunk: Buffer) => {
-                buffer += chunk.toString(); // Füge Chunk zum Puffer hinzu
-
+                buffer += chunk.toString();
                 let newlineIndex;
                 while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
                     const line = buffer.substring(0, newlineIndex).trim();
-                    buffer = buffer.substring(newlineIndex + 1); // Entferne verarbeitete Zeile
-
+                    buffer = buffer.substring(newlineIndex + 1);
                     if (line.startsWith('data: ')) {
                         try {
-                            const jsonData = JSON.parse(line.substring(6)); // Entferne 'data: '
+                            const jsonData = JSON.parse(line.substring(6));
                             socket.emit('agent-chunk', {
                                 agent: agentName,
-                                chunk: jsonData.response || jsonData.chunk || jsonData.message || '',
+                                chunk: jsonData.response || jsonData.chunk || '',
                                 sessionId: socket.id
                             });
-                        } catch (e) {
-                            console.error('❌ Fehler beim Parsen von SSE-Daten:', line, e);
-                            // Optional: Rohdaten senden, falls JSON kaputt ist
-                            // socket.emit('agent-chunk', { agent: agentName, chunk: line });
-                        }
+                        } catch (e) {}
                     }
-                    // Ignoriere andere SSE-Zeilen wie "event:", "id:", "retry:"
                 }
             });
 
             coreResponse.data.on('end', () => {
-                console.log('🏁 Core-Stream beendet für Socket', socket.id);
-                // Sende 'done', falls noch nicht geschehen
                 if (!doneEmitted) {
-                     socket.emit('agent-done', { success: true });
-                     doneEmitted = true;
+                    socket.emit('agent-done', { success: true });
+                    doneEmitted = true;
                 }
             });
 
-            coreResponse.data.on('error', (err: Error) => {
-                console.error('❌ Fehler im Core-Stream für Socket', socket.id, err);
-                socket.emit('agent-error', { message: `Fehler im Core-Stream: ${err.message}` });
-                 if (!doneEmitted) {
-                     socket.emit('agent-done', { success: false, error: err.message });
-                     doneEmitted = true;
-                 }
-            });
-
         } catch (error: any) {
-            console.error('❌ Fehler bei der Anfrage an den Core für Socket', socket.id, error.message);
-            // Unterscheide zwischen verschiedenen Fehlertypen, wenn nötig
-            const errorMessage = error.response?.data?.message || error.message || 'Unbekannter Fehler bei Core-Anfrage.';
-            socket.emit('agent-error', { message: errorMessage });
+            socket.emit('agent-error', { message: error.message });
         }
     });
 
@@ -103,6 +82,8 @@ io.on('connection', (socket: Socket) => {
     });
 });
 
-console.log(`🔗 Psy-socket-gateway (Aktiviert, Streaming-fähig) läuft auf Port 3002`);
+server.listen(3002, () => {
+    console.log(`🔗 Psy-socket-gateway (API + Streaming) läuft auf Port 3002`);
+});
 
 export { io };

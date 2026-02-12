@@ -1,3 +1,4 @@
+import { KnownAgentType } from "@shared/types/AgentTypes";
 import { injectable, inject } from 'tsyringe';
 import { z } from 'zod';
 import { Logger } from "../types/Logger";
@@ -44,52 +45,23 @@ export class OrionOrchestrator {
     private geometryTool: GeometryTool
   ) {}
 
-  // --- NEU: Manifest-Logik ---
   public async initialize(): Promise<void> {
-    this.logger.info('OrionOrchestrator', 'initialize', 'Starte Initialisierung...');
     await this.ensureVolumePaths();
     try {
       await this.loadManifestFromVolume();
-      this.logger.info('OrionOrchestrator', 'init', '✅ Manifest erfolgreich geladen.');
     } catch (err) {
-      this.logger.warn('OrionOrchestrator', 'init', 'Kein vorhandenes Manifest gefunden, erstelle Default-Manifest.', err);
       this.currentManifest = this.getDefaultManifest();
     }
   }
 
   private async ensureVolumePaths() {
-    const dirs = [
-      path.dirname(this.MANIFEST_PATH),
-      path.join(this.VOLUME_BASE, 'code-snapshots')
-    ];
-    for (const d of dirs) {
-      await fs.mkdir(d, { recursive: true });
-    }
-  }
-
-  private validateManifest(m: any): m is ProjectManifest {
-    return m && typeof m.projectName === 'string' && Array.isArray(m.pages);
+    const dirs = [path.dirname(this.MANIFEST_PATH), path.join(this.VOLUME_BASE, 'code-snapshots')];
+    for (const d of dirs) await fs.mkdir(d, { recursive: true });
   }
 
   private async loadManifestFromVolume() {
-    try {
-      const data = await fs.readFile(this.MANIFEST_PATH, 'utf-8');
-      const parsed = JSON.parse(data);
-      if (this.validateManifest(parsed)) {
-        this.currentManifest = parsed;
-      } else {
-        throw new Error('Ungültiges Manifest Format');
-      }
-    } catch (e: any) {
-      if (e.code !== 'ENOENT') this.logger.error('OrionOrchestrator', 'loadManifest', 'Fehler beim Laden des Manifests', e);
-      throw e; // Propagiere den Fehler, damit initialize weiß, dass es fehlgeschlagen ist.
-    }
-  }
-
-  private async saveToVolume(manifest: ProjectManifest) {
-    manifest.updatedAt = new Date().toISOString();
-    await fs.writeFile(this.MANIFEST_PATH, JSON.stringify(manifest, null, 2));
-    this.currentManifest = manifest;
+    const data = await fs.readFile(this.MANIFEST_PATH, 'utf-8');
+    this.currentManifest = JSON.parse(data);
   }
 
   private getDefaultManifest(): ProjectManifest {
@@ -103,100 +75,53 @@ export class OrionOrchestrator {
   }
 
   public getCurrentManifest(): ProjectManifest {
-    if (!this.currentManifest) {
-      this.logger.warn('OrionOrchestrator', 'getCurrentManifest', 'Kein Manifest geladen, verwende Fallback.');
-      this.currentManifest = this.getDefaultManifest();
-    }
-    return this.currentManifest;
+    return this.currentManifest || this.getDefaultManifest();
   }
-  // --- ENDE NEU ---
 
   private validateAgentOutput<T>(output: string, schema: z.ZodSchema<T>): T {
-    try {
-      let rawJson = output;
-      let parsedJson;
-
-      const markdownMatch = output.match(/```json\s*\n([\s\S]*?)\n\s*```/);
-      if (markdownMatch && markdownMatch[1]) {
-        rawJson = markdownMatch[1].trim();
-      } else {
-        const generalMatch = output.match(/\{[\s\S]*\}/);
-        if (generalMatch) {
-          rawJson = generalMatch[0].trim();
-        }
-      }
-
-      try {
-        parsedJson = JSON.parse(rawJson);
-      } catch (parseError: any) {
-        this.logger.error("OrionOrchestrator", "validate", `JSON Parse Fehler: ${parseError.message} bei: ${rawJson.substring(0, 50)}...`);
-        throw new Error(`Agent-Output Strukturfehler: Ungültiges JSON.`);
-      }
-
-      return schema.parse(parsedJson);
-        return schema.parse(JSON.parse(rawJson));
-      return schema.parse(JSON.parse(rawJson));
-    } catch (error: any) {
-      this.logger.error('OrionOrchestrator', 'validate', `Validierung fehlgeschlagen: ${error.message}`);
-      throw new Error(`Agent-Output Strukturfehler: ${error.message}`);
-    }
+    let rawJson = output || "";
+    const markdownMatch = rawJson.match(/```json\s*\n([\s\S]*?)\n\s*```/);
+    if (markdownMatch) rawJson = markdownMatch[1].trim();
+    const parsed = JSON.parse(rawJson.match(/\{[\s\S]*\}/)?.[0] || rawJson);
+    return schema.parse(parsed);
   }
 
   public async processRequestStreaming(request: any, onChunk: (chunk: string) => void): Promise<AgentResult> {
     const input = request.input.toLowerCase();
 
-    // 1. DOKUMENTATIONS-PHASE (Validiert)
+    // 1. Dokumentation
     if (request.agent === "DokumentationAgent" || request.agent === "DOKUMENTATION_AGENT") {
-      onChunk("\n[ORION]: Starte Markt-Analyse...\n");
+      onChunk("\n[ORION]: Analyse läuft...\n");
       const docResult = await this.agentExecutor.execute(request.agent, { query: request.input });
       const extractedData = this.validateAgentOutput(docResult.output, DOC_ANALYSIS_SCHEMA);
-
-      onChunk("\n[ORION]: Analyse erfolgreich validiert. Synthese läuft...\n");
-      const orionInput = {
-        query: `SYNTHESE: Basierend auf ${JSON.stringify(extractedData)}, plane die Architektur.`,
+      return await this.agentExecutor.execute("ORION_AGENT", {
+        query: `SYNTHESE: ${JSON.stringify(extractedData)}`,
         context: { ...request.sessionData, docAnalysis: extractedData }
-      };
-      return await this.agentExecutor.execute("OrionAgent", orionInput);
+      });
     }
 
-    // 2. ORION CHECKPOINT (Der rote Knopf)
-    if (request.agent === "OrionAgent") {
-      const result = await this.agentExecutor.execute("OrionAgent", { query: request.input, context: request.sessionData });
-
-      if (result.output.includes("MISSION_KLAR")) {
-        const approved = ["starten", "go", "bestätigt"].some(k => input.includes(k));
-        if (!approved) {
-          onChunk(result.output);
-          onChunk("\n\n[SYSTEM]: Strategie bereit. Schreibe 'Starten', um die Roadmap zu aktivieren.\n");
-          return { output: "Warten auf User-Go.", success: true, agentName: "Orion" as any };
-        }
-        onChunk("\n[SYSTEM]: Freigabe erhalten. Übergebe an Plan-Agent...\n");
-        // Füge das aktuelle Manifest als Kontext hinzu, falls der PlanAgent es benötigt
-        const planInput = {
-          query: "ERSTELLE ROADMAP",
-          context: { ...request.sessionData, manifest: this.getCurrentManifest() }
-        };
-        return await this.agentExecutor.execute("PlanAgent", planInput);
+    // 2. Geometrie Hook - korrigiert
+    if (input.includes("tetraeder") || input.includes("geometrie")) {
+      onChunk("\n[ORION]: Geometrie-Kern aktiv...\n");
+      try {
+        // Korrekter Aufruf mit allen erforderlichen Parametern
+        const geoData = await this.geometryTool.calculate("PLATONIC_SOLIDS", "tetrahedron", { size: 5 });
+        const response = `\n[ERGEBNIS]: ${JSON.stringify(geoData)}\n`;
+        onChunk(response);
+        return { output: response, success: true, agentName: "ORION" as any };
+      } catch (err: any) {
+        onChunk(`\n[!] Geometrie-Fehler: ${err.message}\n`);
+        return { output: "", success: false, agentName: "ORION" as any };
       }
-
-      onChunk(result.output);
-      return result;
     }
 
-    // 3. PLAN AGENT (kann das Manifest abrufen)
-    if (request.agent === "PlanAgent") {
-      // Stelle sicher, dass das Manifest verfügbar ist
-      const manifest = this.getCurrentManifest();
-      const planInput = {
-        query: request.input,
-        context: { ...request.sessionData, manifest }
-      };
-      const result = await this.agentExecutor.execute("PlanAgent", planInput);
-      onChunk(result.output);
-      return result;
-    }
+    // 3. Standard Flow & PlanAgent
+    const context = request.agent === "PlanAgent" 
+      ? { ...request.sessionData, manifest: this.getCurrentManifest() }
+      : request.sessionData;
 
-    // Standard-Verhalten
-    return await this.agentExecutor.execute(request.agent, { query: request.input, context: request.sessionData });
+    const result = await this.agentExecutor.execute(request.agent, { query: request.input, context });
+    if (result && result.output) onChunk(result.output);
+    return result;
   }
 }

@@ -25,3 +25,5 @@ MISSION_KLAR: [Zusammenfassung der Projektvision, Design-Richtung und technische
 ---
 Nutze einfache, begeisternde Worte für den Menschen. Vermeide Emojis in technischen Beschreibungen.
 `;
+
+// HARMONIE-UPGRADE: Du bist das Gedächtnis. Scanne 'sessionData' und verweise auf Vorarbeit anderer Agenten. Warte auf User-GO.

@@ -16,7 +16,7 @@ class RunsController {
     }
 
     try {
-      const conversation = await conversationService.getConversationByRunId(runId);
+      const conversation = await conversationService.getConversationByRunId(runId as string);
       res.json({ success: true, data: conversation });
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -46,14 +46,14 @@ class RunsController {
       console.log(`[RunsController] Starte Live-Run mit Agent: ${agentName}, runId: ${runId}`);
 
       await new Promise(resolve => setTimeout(resolve, 500));
-      LiveRunService.startStreamingSimulation(runId, agentName);
+      LiveRunService.startStreamingSimulation(runId as string, agentName as string);
 
       res.json({
         success: true,
         runId,
         agentName,
         message: 'Live-Run gestartet',
-        wsUrl: `ws://157.180.31.27:3001/ws/live/${runId}`,
+        wsUrl: `wss://psy-nexus.live/ws/live/${runId}`,
         timestamp: new Date().toISOString()
       });
     } catch (error: unknown) {

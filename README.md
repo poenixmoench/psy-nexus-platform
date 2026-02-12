@@ -1,24 +1,48 @@
-# Psy-NEXUS Event Manager
+# Psy-Nexus Platform - Backend Deployment
 
-Ein Open-Source-Event-Management-System für die Psytrance-Community, erstellt mit Vue.js 3, Express.js, PostgreSQL und Docker.
+## Architektur-Übersicht
+- **Shared Library**: \`libs/shared/geometry\` mit absoluten Pfad-Imports
+- **Monorepo-Struktur**: Apps in \`apps/backend\`, Bibliotheken in \`libs/\`
+- **Geometrie-Engine**: Integriert als interne Engine, keine direkte API
 
-## Features
+## Deployment & Wartung
+### Primäres Deploy-Script
+\`\`\`bash
+/root/psy-nexus-platform/scripts/deploy-backend.sh
+\`\`\`
 
-- Veranstaltungen erstellen, anzeigen und filtern
-- Benutzerauthentifizierung (Registrierung, Login)
-- Chronologische Sortierung (LIVE → FUTURE → PAST)
-- Responsive Webdesign
-- Community-Moderation (geplant)
+### System-Checks (via Cron)
+- **Zeitplan**: Täglich um 02:00 Uhr
+- **Skript**: \`/root/psy-nexus-platform/scripts/system-check.sh\`
+- **Überwachung**: Backend-Status, Log-Rotation, Festplattenplatz
 
-## Technologie-Stack
+## Monitoring
+### Log-Dateien
+- **Backend-Log**: \`/root/psy-nexus-platform/logs/backend.log\`
+- **Deploy-Logs**: \`/root/psy-nexus-platform/logs/deploy-YYYYMMDD.log\`
+- **PID-Datei**: \`/root/psy-nexus-platform/backend.pid\`
 
-- **Frontend:** Vue.js 3, Vite, TypeScript, Pinia
-- **Backend:** Node.js, Express.js, TypeScript
-- **Datenbank:** PostgreSQL 15
-- **Cache:** Redis
-- **Container:** Docker, Docker Compose
-- **Webserver:** Nginx
+### Status-Indikatoren
+- **Geometrie-Engine**: \`"Platonic: 2 | Sacred: 3"\` im Backend-Log
+- **Service-Status**: \`curl http://localhost:3000/api/health\`
 
-## Lizenz
+## Troubleshooting
+### Häufige Probleme
+1. **Undefined Geometrien**: Prüfe \`Object.keys()\` in \`index.ts\`
+2. **Build-Fehler**: Validiere TypeScript in \`libs/shared/geometry/src/\`
+3. **Port-Konflikte**: \`lsof -i:3000\` zur Prozessanalyse
 
-BSD 3-Clause
+### Manuelle Reparatur
+Falls das System hängt:
+\`\`\`bash
+# Prozess stoppen
+pkill -f "node.*backend" || kill -9 $(cat /root/psy-nexus-platform/backend.pid)
+
+# Neustart
+/root/psy-nexus-platform/scripts/deploy-backend.sh
+\`\`\`
+
+## Geplante Erweiterungen
+- **API-Endpunkte** für Geometrie-Daten (geplant)
+- **Cache-Optimierung** für komplexe Berechnungen
+- **Metrik-Export** für Prometheus/Monitoring

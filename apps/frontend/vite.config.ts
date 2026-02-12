@@ -7,10 +7,25 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
+      "@shared": path.resolve(__dirname, "../../packages/shared/src"),
       '@': path.resolve(__dirname, './src'),
     },
   },
-  build: {
-    chunkSizeWarningLimit: 1600,
-  }
+  server: {
+    host: '0.0.0.0',  // Erlaubt externe Verbindungen
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3005',
+        changeOrigin: true,
+        secure: false  // Für lokale Entwicklung
+      },
+      '/socket.io': {
+        target: 'http://localhost:3005',
+        ws: true,  // WebSocket-Unterstützung aktivieren
+        changeOrigin: true,
+        secure: false
+      }
+    }
+  },
+  build: { chunkSizeWarningLimit: 1600 }
 })

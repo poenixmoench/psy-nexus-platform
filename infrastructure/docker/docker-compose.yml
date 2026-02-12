@@ -1,5 +1,8 @@
 services:
   backend:
+    build:
+      context: ../../
+      dockerfile: apps/backend/Dockerfile
     image: psy-nexus-backend:production
     container_name: docker-backend-1
     ports:

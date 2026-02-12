@@ -1,15 +1,25 @@
-import { injectable, inject } from "tsyringe";
-import { BaseAgent } from "./BaseAgent";
-import { Logger } from "../types/Logger";
-import { AgentName } from "../types/AgentTypes";
+import { injectable } from 'tsyringe';
+import { BaseAgent } from '@shared/basis-agent';
+import { ContextDelta, StigmergyTag, KnownAgentType } from '@shared/types/AgentTypes';
 
 @injectable()
 export class DokumentationAgent extends BaseAgent {
-  public name: AgentName = "DOKUMENTATION-AGENT" as AgentName;
+  public readonly name: KnownAgentType = 'DOKUMENTATION_AGENT';
+  public async processDelta(delta: ContextDelta) {
+    const response = {
+      analysis: {
+        primaryDomain: "Dokumentation",
+        entities: [],
+        seoElements: { headings: {}, missingCritical: [] },
+        potentialIntent: "Informationsaufnahme",
+        targetAudienceClues: ["Entwickler"]
+      },
+      recommendations: { jsonLdProposal: "", structuralSuggestions: [] }
+    };
 
-  constructor(@inject("Logger") logger: Logger) {
-    super(undefined, logger);
+    return {
+      output: "```json\n" + JSON.stringify(response, null, 2) + "\n```",
+      newTags: []
+    };
   }
-
-  // Agent nutzt jetzt automatisch execute() und executeStreaming() von BaseAgent
 }

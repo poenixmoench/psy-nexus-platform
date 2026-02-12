@@ -1,12 +1,12 @@
-import { Router, Request, Response } from 'express';
-import fs from 'fs';
-import path from 'path';
+import { Router } from 'express';
+import HistoryController from '../controllers/HistoryController';
 
 const router = Router();
 
-//  [OK]  REMOVED: Der alte /api/agents endpoint - jetzt in agentRoutes.ts!
+// Route: GET /api/history/latest
+router.get('/latest', HistoryController.getLatestRuns.bind(HistoryController));
 
-// Hier folgen deine restlichen History-Routen...
-// (Falls es welche gibt)
+// Route: GET /api/history/run/:runId
+router.get('/run/:runId', HistoryController.getRunDetails.bind(HistoryController));
 
 export default router;

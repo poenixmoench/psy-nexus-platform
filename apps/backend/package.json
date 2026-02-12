@@ -1,48 +1,49 @@
 {
   "name": "psy-nexus-backend",
-  "main": "dist/index.js",
+  "version": "1.0.0",
+  "main": "dist/apps/backend/src/main.js",
   "scripts": {
-    "start": "node dist/index.js",
-    "build": "tsc"
+    "start": "node dist/apps/backend/src/main.js",
+    "build": "tsc && ./fix-modules.sh"
   },
   "dependencies": {
+    "@nestjs/event-emitter": "^3.0.1",
     "@octokit/rest": "^22.0.1",
-    "@types/cors": "^2.8.19",
-    "axios": "^1.13.3",
+    "axios": "^1.13.4",
     "bcrypt": "^5.1.1",
-    "cors": "^2.8.5",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
     "dotenv": "^17.2.3",
+    "eventemitter2": "^6.4.9",
     "express": "^4.22.1",
+    "hono": "^4.11.7",
     "jsonwebtoken": "^9.0.2",
+    "jws": "^4.0.1",
+    "lodash": "^4.17.23",
+    "module-alias": "^2.3.4",
     "mongodb": "^7.0.0",
     "mongoose": "^9.1.5",
     "pg": "^8.16.3",
     "prisma": "^7.2.0",
+    "qs": "^6.14.1",
+    "redis": "^5.10.0",
     "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
     "tsyringe": "^4.10.0",
     "uuid": "^13.0.0",
     "ws": "^8.19.0",
+    "xstate": "^5.26.0",
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@types/bcrypt": "^5.0.2",
-    "@types/dotenv": "^6.1.1",
-    "@types/express": "^5.0.5",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/mongodb": "^4.0.7",
-    "@types/mongoose": "^5.11.97",
-    "@types/node": "^20.19.30",
-    "@types/pg": "^8.15.6",
-    "@types/socket.io": "^3.0.1",
-    "@types/ws": "^8.18.1",
     "reflect-metadata": "^0.2.2",
-    "ts-node": "^10.9.2",
-    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.3"
   },
-  "version": "1.0.0",
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": ""
+  "_moduleAliases": {
+    "@shared/basis-agent": "./dist/libs/shared/basis-agent",
+    "@shared/geometry": "./dist/libs/shared/geometry",
+    "@shared/config": "./dist/packages/shared/src/config",
+    "@shared": "/root/psy-nexus-platform/apps/backend/dist/packages/shared/src",
+    "bcrypt": "./node_modules/bcryptjs"
+  }
 }

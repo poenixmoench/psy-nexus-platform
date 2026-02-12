@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@shared/basis-agent": ["libs/shared/basis-agent/src/index.ts"],
+      "@shared/geometry": ["libs/shared/geometry/src/index.ts"],
+      "@shared/types/*": ["packages/shared/src/types/*"]
+    }
+  }
+}

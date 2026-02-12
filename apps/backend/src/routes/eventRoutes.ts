@@ -64,7 +64,7 @@ router.get('/', async (req: Request, res: Response) => {
 // router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const eventId = parseInt(req.params.id, 10);
+    const eventId = parseInt(req.params.id as string, 10);
 
     if (isNaN(eventId)) {
       return res.status(400).json({ error: 'Invalid event ID' });
@@ -87,7 +87,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 // Korrigiert: Nutze 'validate(updateEventSchema)' anstelle von 'validateResource(updateEventSchema)'
 router.put('/:id', authenticateToken, validate(updateEventSchema), async (req: Request, res: Response) => {
   try {
-    const eventId = parseInt(req.params.id, 10);
+    const eventId = parseInt(req.params.id as string, 10);
     // Extrahiere *validierte* neue Daten aus dem Body
     // Durch validate(updateEventSchema) ist req.body jetzt vom Typ des Schemas (z.B. { title?: string, date?: string })
     const { title, date } = req.body;
@@ -119,7 +119,7 @@ router.put('/:id', authenticateToken, validate(updateEventSchema), async (req: R
 // DELETE-Route zum Löschen eines Events - GESCHÜTZT
 router.delete('/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
-    const eventId = parseInt(req.params.id, 10);
+    const eventId = parseInt(req.params.id as string, 10);
 
     if (isNaN(eventId)) {
       return res.status(400).json({ error: 'Invalid event ID' });
@@ -141,3 +141,5 @@ router.delete('/:id', authenticateToken, async (req: Request, res: Response) => 
 });
 
 export const eventRoutes = router;
+
+export default router;

@@ -1,0 +1,1 @@
+{"root":["./src/index.ts","./src/engine/geometry.engine.ts","./src/modules/complex.ts","./src/modules/platonic.ts","./src/modules/sacred.ts","./src/types/index.ts","./src/types/types.ts"],"version":"5.9.3"}

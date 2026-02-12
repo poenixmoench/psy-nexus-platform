@@ -9,13 +9,13 @@
              class="agent-card" :class="{ active: activeAgent === name }"
              @click="activeAgent = name">
           <div class="card-header">
-            <span class="agent-name">{{ name }}</span> <!-- Kein holographic-pulse hier -->
+            <span class="agent-name">{{ name.replace(/_/g, "-").toUpperCase() }}</span> <!-- Kein holographic-pulse hier -->
             <div class="signal-wrapper">
               <div class="status-indicator" :class="{ processing: streamingAgent === name }"></div>
               <div v-if="streamingAgent === name" class="pulse-ring"></div>
             </div>
           </div>
-          <div class="card-body">{{ agentTheme[name]?.role || 'Sub-System' }}</div> <!-- Kein holographic-pulse hier -->
+<div class="card-body">{{ (name.includes('ORION') ? 'Strategische Leitung' : name.includes('PLAN') ? 'Projekt Koordination' : name.includes('DESIGN') ? 'UI/UX Architektur' : name.includes('FRONTEND') ? 'Infrastruktur Architektur' : name.includes('BACKEND') ? 'Logik Architektur' : name.includes('QA') ? 'Qualitätssicherung' : name.includes('OPTIM') ? 'Performance Tuning' : name.includes('DOKU') ? 'Technische Dokumentation' : 'Nexus Agent').toUpperCase() }}</div>
         </div>
       </div>
     </aside>
@@ -25,7 +25,7 @@
         <div class="neural-map-header">
           <div class="header-left">
             <span class="header-title holographic-pulse">NEXUS ZENTRALE</span>
-            <span class="header-status">{{ activeAgent }}</span> <!-- Kein holographic-pulse hier -->
+            <span class="header-status">{{ displayNameMap[activeAgent] || activeAgent }}</span> <!-- Kein holographic-pulse hier -->
           </div>
           <div class="header-actions">
             <button @click="hostProject" class="nexus-btn host-pulse">HOSTEN (STAGING)</button>
@@ -62,7 +62,7 @@
                   class="workflow-line" :class="{ active: activeAgent === name }" />
             <g :class="['node', { active: activeAgent === name, streaming: streamingAgent === name }]">
               <circle :cx="nodeX(i)" :cy="nodeY(i)" r="8" class="node-circle" />
-              <text :x="nodeX(i)" :y="nodeY(i) + 22" class="node-label">{{ name.substring(0, 3) }}</text> <!-- Kein holographic-pulse hier -->
+              <text :x="nodeX(i)" :y="nodeY(i) + 22" class="node-label">{{ name.substring(0, 3).toUpperCase() }}</text> <!-- Kein holographic-pulse hier -->
             </g>
           </g>
         </svg>
@@ -120,7 +120,7 @@
           sandbox="allow-scripts allow-same-origin"
           title="Live Preview"
         ></iframe>
-        <div v-else class="preview-empty">Warte auf {{ activeAgent }}...</div>
+        <div v-else class="preview-empty">Warte auf {{ displayNameMap[activeAgent] || activeAgent }}...</div>
       </div>
     </section>
   </div>
@@ -128,10 +128,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick, computed } from 'vue'
+import { useWebSocketStore } from '../stores/webSocketStore'
 import { io } from 'socket.io-client'
 import { marked } from 'marked'
 
-const socket = io('/', { path: '/socket.io/', transports: ['websocket'] })
+const socket = io('', { path: '/socket.io/', transports: ['websocket'] })
 const agents = ref<any>({})
 const activeAgent = ref('ORION')
 const userInput = ref('')
@@ -149,7 +150,20 @@ const toastMsg = ref('')
 const stagingActive = ref(false)
 
 // Neue Variablen für das Stafetten-Feature
+
 const awaitingHandover = ref(false)
+const webSocketStore = useWebSocketStore()
+const handleGateDecision = (approved) => {
+  if (typeof socket !== 'undefined') {
+    socket.emit('gate-decision', {
+      runId: webSocketStore.pendingGate.runId,
+      gateType: webSocketStore.pendingGate.gateType,
+      approved
+    });
+  }
+  webSocketStore.pendingGate = null;
+  if (typeof triggerToast !== 'undefined') triggerToast(approved ? 'GATE FREIGEGEBEN' : 'ABGEBROCHEN');
+};
 const suggestedAgents = ref<string[]>([])
 
 // Neue Funktion für die Stafetten-Übergabe
@@ -280,6 +294,27 @@ const extractCodeBlock = (text: string): string => {
   return ''
 }
 
+const displayNameMap = {
+  "ORION_AGENT": "ORION_AGENT",
+  "PlanAgent": "PLAN-AGENT", 
+  "FrontendMeisterAgent": "FRONTEND-AGENT",
+  "DesignAlchemistAgent": "DESIGN-AGENT",
+  "BackendArchitectAgent": "BACKEND-AGENT",
+  "QaGuruAgent": "QA-GURU-AGENT",
+  "OptimizerAgent": "OPTIMIER-AGENT",
+  "DokumentationAgent": "DOKUMENTATION-AGENT"
+};
+
+const displayRoleMap = {
+  "Strategic Nexus Lead": "Strategische Leitung",
+  "Workflow-Architect": "Projekt Koordination", 
+  "SEO & Interface Constructor": "UI/UX Architektur", 
+  "Visual Alchemist & Geometry Engine Lead": "Visuelle Gestaltung",
+  "Logic-Infrastruct": "System Infrastruktur",
+  "Reliability Guard": "Qualitätssicherung",
+  "Efficiency Tuner": "Performance Tuning",
+  "Deployment-Chronist": "Technische Dokumentation"
+};
 onMounted(async () => {
   const res = await fetch('/api/agents');
   const data = await res.json();

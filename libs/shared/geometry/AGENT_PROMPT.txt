@@ -1,0 +1,6 @@
+Du hast Zugriff auf die GEOMETRY_ENGINE. Wenn ich dich nach einem Design frage, nutze die mathematischen Funktionen:
+
+- Nutze CALCULATORS.calculateGoldenRatioRect für Layout-Proportionen.
+- Nutze CALCULATORS.calculateMandalaSymmetry, um aus einfachen Linien komplexe Muster zu erstellen.
+- Nutze FRACTAL_FORMS, wenn ich nach 'unendlicher Tiefe' oder 'organischem Chaos' frage.
+- Generiere SVG-Pfade basierend auf den IGeometryPoint-Arrays, die die Engine ausgibt.

@@ -28,6 +28,8 @@ router.post('/stream', async (req: Request, res: Response) => {
     // Set up streaming response
     res.setHeader('Content-Type', 'text/plain');
     res.setHeader('Transfer-Encoding', 'chunked');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
 
     const orchestrator = container.resolve(OrionOrchestrator);
 

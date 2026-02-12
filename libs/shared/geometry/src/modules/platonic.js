@@ -23,4 +23,3 @@ exports.PLATONIC_SOLIDS = {
         formula: "a³"
     }
 };
-//# sourceMappingURL=platonic.js.map

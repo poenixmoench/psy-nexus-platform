@@ -1,6 +1,6 @@
 import { injectable, inject } from 'tsyringe';
 import { GEOMETRY_ENGINE } from '@shared/geometry';
-import { IGeometryPoint } from '@shared/geometry';
+type IGeometryPoint = any; //  from '@shared/geometry/geometry.engine';
 
 type GeometryCategory = keyof typeof GEOMETRY_ENGINE;
 type GeometryFormKey<T extends GeometryCategory> = keyof (typeof GEOMETRY_ENGINE)[T];

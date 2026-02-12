@@ -72,3 +72,5 @@ router.post('/login', validate(loginSchema), async (req: Request, res: Response)
 });
 
 export const authRoutes = router;
+
+export default router;

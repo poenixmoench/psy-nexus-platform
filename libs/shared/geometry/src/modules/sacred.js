@@ -22,4 +22,3 @@ exports.SACRED_GEOMETRY = {
         formula: "R = r * sqrt(3)"
     }
 };
-//# sourceMappingURL=sacred.js.map

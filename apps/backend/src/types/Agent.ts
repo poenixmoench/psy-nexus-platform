@@ -1,17 +1,21 @@
-import { LLM_MODELS } from '../config/llmConfig';
-
-export type LLMModel = typeof LLM_MODELS[keyof typeof LLM_MODELS];
-
 export interface IAgent {
   id: string;
   name: string;
   role: string;
   description: string;
-  preferredModel: LLMModel;
+  category: string;
+  avatar?: string;
+  status: 'active' | 'inactive' | 'loading';
 }
 
-export interface AgentWithStats extends IAgent {
-  tokensUsed?: number;
-  responseTime?: number; // ms
-  successRate?: number; // 0-100
+export interface AgentStrategyResponse {
+  agentId: string;
+  strategy: string;
+  steps: string[];
+  timestamp: string;
+}
+
+export interface SseEvent {
+  type: string;
+  data: any;
 }

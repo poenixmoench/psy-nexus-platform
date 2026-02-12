@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "projectName": "Nexus-Default",
+  "workflowSequence": {
+    "initial_orion": { "agent": "PLAN_AGENT", "requiresApproval": false },
+    "planning":      { "agent": "DESIGN_ALCHEMIST_AGENT", "requiresApproval": true, "gateName": "PLAN_APPROVAL" },
+    "design":        { "agent": "FRONTEND_MEISTER_AGENT", "requiresApproval": true, "gateName": "DESIGN_APPROVAL" },
+    "frontend":      { "agent": "BACKEND_ARCHITEKT_AGENT", "requiresApproval": false },
+    "backend":       { "agent": "QA_GURU_AGENT", "requiresApproval": false },
+    "qa":            { "agent": "OPTIMIERER_AGENT", "requiresApproval": true, "gateName": "QA_APPROVAL" },
+    "optimization":  { "agent": "DOKUMENTATION_AGENT", "requiresApproval": false },
+    "documentation": { "agent": "ORION_AGENT", "requiresApproval": true, "gateName": "DOC_APPROVAL" },
+    "final_orion":   { "agent": "ORION_AGENT", "requiresApproval": true, "gateName": "FINAL_MISSION_CONTROL" }
+  }
+}

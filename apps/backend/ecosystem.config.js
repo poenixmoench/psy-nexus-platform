@@ -1,34 +1,26 @@
 module.exports = {
-  apps: [
-    {
-      name: 'psy-backend-core',
-      script: './dist/index.js',
-      instances: 1,
-      exec_mode: 'fork',
-      env: {
-        NODE_ENV: 'production',
-        PORT: 3001
-      },
-      watch: false,
-      max_memory_restart: '1G',
-      error_file: './logs/core-err.log',
-      out_file: './logs/core-out.log',
-      log_file: './logs/core-combined.log'
+  apps: [{
+    name: 'psy-backend',
+    script: 'dist/apps/backend/src/index.js',
+    cwd: '/root/psy-nexus-platform/apps/backend',
+    exec_mode: 'fork',
+    instances: 1,
+    autorestart: true,
+    watch: false,
+    min_uptime: '5000',
+    max_restarts: 10,
+    restart_delay: 2000,
+    max_memory_restart: '750M',
+    env_file: '.env',
+    node_args: '-r module-alias/register',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 3001,
+      AGENT_TIMEOUT: '30000'
     },
-    {
-      name: 'psy-socket-gateway',
-      script: './dist/socket-server.js',
-      instances: 1,
-      exec_mode: 'fork',
-      env: {
-        NODE_ENV: 'production',
-        PORT: 3002
-      },
-      watch: false,
-      max_memory_restart: '512M',
-      error_file: './logs/socket-err.log',
-      out_file: './logs/socket-out.log',
-      log_file: './logs/socket-combined.log'
-    }
-  ]
+    error_file: '/root/.pm2/logs/psy-backend-error.log',
+    out_file: '/root/.pm2/logs/psy-backend-out.log',
+    log_date_format: 'YYYY-MM-DD HH:mm:ss',
+    merge_logs: true
+  }]
 };
