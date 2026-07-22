@@ -1,0 +1,168 @@
+<template>
+  <div class="neural-grid">
+    <div v-if="showToast" class="system-toast">{{ toastMsg }}</div>
+
+    <aside class="agents-section">
+      <div class="section-header holographic-pulse">AGENTEN</div>
+      <div class="agents-grid">
+        <div v-for="(agent, name) in agents" :key="name"
+             class="agent-card" :class="{ active: activeAgent === name }"
+             @click="activeAgent = name">
+          <div class="card-header">
+            <span class="agent-name">{{ name.replace(/_/g, "-").toUpperCase() }}</span> <!-- Kein holographic-pulse hier -->
+            <div class="signal-wrapper">
+              <div class="status-indicator" :class="{ processing: streamingAgent === name }"></div>
+              <div v-if="streamingAgent === name" class="pulse-ring"></div>
+            </div>
+          </div>
+<div class="card-body">{{ (name.includes('ORION') ? 'Strategische Leitung' : name.includes('PLAN') ? 'Projekt Koordination' : name.includes('DESIGN') ? 'UI/UX Architektur' : name.includes('FRONTEND') ? 'Infrastruktur Architektur' : name.includes('BACKEND') ? 'Logik Architektur' : name.includes('QA') ? 'Qualitätssicherung' : name.includes('OPTIM') ? 'Performance Tuning' : name.includes('DOKU') ? 'Technische Dokumentation' : 'Nexus Agent').toUpperCase() }}</div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="chat-section">
+      <div class="neural-map-wrapper">
+        <div class="neural-map-header">
+          <div class="header-left">
+            <span class="header-title holographic-pulse">NEXUS ZENTRALE</span>
+            <span class="header-status">{{ displayNameMap[activeAgent] || activeAgent }}</span> <!-- Kein holographic-pulse hier -->
+          </div>
+          <div class="header-actions">
+  <!-- NEU: FREIGEBEN-Button (Option C) -->
+  <button 
+    v-if="hasPendingLocks" 
+    @click="releaseAlphaLock" 
+    class="nexus-btn unlock-btn">🔓 FREI</button>
+            
+            <button v-if="stagingActive" @click="publishToProd" class="nexus-btn gold-prod-btn">
+              RELEASE TO MAIN SITE
+            </button>
+            
+          </div>
+        </div>
+
+        <svg class="neural-map" viewBox="0 0 300 300">
+          <!-- Filter für weichere Linien -->
+          <defs>
+            <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="0.5" result="blur"/>
+              <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+            </filter>
+          </defs>
+          <!-- "Seed of Life" Geometrie -->
+          <g class="seed-of-life" filter="url(#softGlow)" :class="{ 'is-streaming': streamingAgent }">
+            <!-- Zentraler Kreis -->
+            <circle cx="150" cy="150" r="42" class="geo-circle" />
+            <!-- 6 umgebende Kreise -->
+            <circle v-for="n in 6" :key="n"
+                    :cx="150 + 42 * Math.cos((n * 60 * Math.PI) / 180)"
+                    :cy="150 + 42 * Math.sin((n * 60 * Math.PI) / 180)"
+                    r="42" class="geo-circle" />
+          </g>
+          <!-- Verbindungslinien zu Agenten-Nodes -->
+          <g v-for="(name, i) in agentNames" :key="i">
+            <line x1="150" y1="150" :x2="nodeX(i)" :y2="nodeY(i)"
+                  class="workflow-line" :class="{ active: activeAgent === name }" />
+            <g :class="['node', { active: activeAgent === name, streaming: streamingAgent === name }]">
+              <circle :cx="nodeX(i)" :cy="nodeY(i)" r="8" class="node-circle" />
+              <text :x="nodeX(i)" :y="nodeY(i) + 22" class="node-label">{{ name.substring(0, 3).toUpperCase() }}</text> <!-- Kein holographic-pulse hier -->
+            </g>
+          </g>
+        </svg>
+      </div>
+
+      <div class="messages-area" ref="msgBox">
+        <div v-for="(msg, i) in agents[activeAgent]?.history" :key="i" class="message" :class="msg.type">
+          <div class="msg-header">
+            <span class="msg-agent">{{ msg.agent }}</span> <!-- Kein holographic-pulse hier -->
+            <button v-if="msg.type === 'agent'" @click="copy(msg.text)" class="btn-copy">COPY</button>
+          </div>
+          <div class="msg-text" v-html="marked(msg.text)"></div> <!-- Kein holographic-pulse hier -->
+        </div>
+
+        <div v-if="streamingAgent === activeAgent" class="message agent streaming">
+          <div class="msg-header">
+          </div>
+          <div class="msg-text streaming-live-text">{{ streamingText }}<span class="cursor">▌</span></div>
+        </div>
+
+        <div v-if="streamingAgent" class="stop-container">
+          <button @click="stopGeneration" class="btn-stop">■ STOP GENERATION</button>
+        </div>
+
+        <!-- Stafetten-Übergabe Zone -->
+        <div v-if="awaitingHandover" class="handover-zone">
+          <div class="handover-label holographic-pulse">STAFETTEN-ÜBERGABE ERFORDERLICH</div>
+          <div class="handover-buttons">
+            <button v-for="nextAgent in suggestedAgents" 
+                    @click="triggerHandover(nextAgent)" 
+                    class="nexus-btn host-pulse handover-btn">
+              ÜBERGEBE AN {{ nextAgent }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-zone">
+        <textarea id="user-input" name="userInput" v-model="userInput" @keydown.enter.exact.prevent="send"
+                  :placeholder="'BEFEHL AN ' + activeAgent + '...'"
+                  class="system-input"></textarea> <!-- Kein holographic-pulse hier -->
+        <button @click="send" class="btn-execute" :disabled="!!streamingAgent">SENDEN</button>
+      </div>
+    </main>
+
+    <section class="stats-section">
+      <div class="section-header holographic-pulse">LIVE VORSCHAU</div>
+          <div class="preview-controls">
+            <button @click="releaseAlphaLock" class="nexus-btn prev-btn">◀ FREI</button>
+            <button @click="hostProject" class="nexus-btn host-pulse">🏠 HOSTEN</button>
+            <button @click="resetWorkspace" class="nexus-btn reset-pulse">ZURÜCK</button>
+          </div>
+      <div class="preview-box">
+        <iframe
+          v-if="agentPreviews[activeAgent]"
+          :key="activeAgent"
+          :srcdoc="agentPreviews[activeAgent]"
+          class="preview-iframe"
+          sandbox="allow-scripts allow-same-origin"
+          title="Live Preview"
+        ></iframe>
+        <div v-else class="preview-empty">Warte auf {{ displayNameMap[activeAgent] || activeAgent }}...</div>
+      </div>
+    </section>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, nextTick, computed } from 'vue'
+import { useWebSocketStore } from '../stores/webSocketStore'
+import { io } from 'socket.io-client'
+import { marked } from 'marked'
+
+import { useSanitizeSVG } from '../composables/useSanitizeSVG';
+const socket = io('', { path: '/socket.io/', transports: ['websocket'] })
+const { sanitizeSVG } = useSanitizeSVG();
+const agents = ref<any>({})
+const activeAgent = ref('ORION_AGENT')
+const userInput = ref('')
+const msgBox = ref<HTMLElement | null>(null)
+const agentPreviews = ref<Record<string, string>>({
+  'ORION': '', 'PLAN-AGENT': '', 'FRONTEND-MEISTER': '', 'DESIGN-ALCHEMIST': '', 'DESIGN_ALCHEMIST_AGENT': '',
+  'BACKEND-ARCHITEKT': '', 'QA-GURU': '', 'OPTIMIERER': '', 'DOKUMENTATION': ''
+})
+
+const streamingAgent = ref('')
+const workflowId = ref<string | null>(null)
+const streamingText = ref('')
+const streamingModel = ref('');
+const streamingModel = ref('');
+const updateTimeoutId = ref<NodeJS.Timeout | null>(null)
+const showToast = ref(false)
+const toastMsg = ref('')
+const stagingActive = ref(false)
+const hasPendingLocks = ref(false);
+
+
+const checkForPendingLocks = async () => {
+  try {
+    const res = await fetch("/api/stigmergy/tags/pending");

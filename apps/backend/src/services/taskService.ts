@@ -1,6 +1,6 @@
 import { Pool } from 'pg'
-import type { TaskRow } from '../db/queries/taskQueries'
-import { INSERT_TASK, GET_TASK, UPDATE_TASK_STATUS, GET_TASKS_BY_USER, GET_PENDING_TASKS, GET_RUNNING_TASKS, CANCEL_TASK, INSERT_TASK_RESULT, GET_TASK_RESULTS, GET_LATEST_TASK_RESULT } from '../db/queries/taskQueries'
+import type { TaskRow } from '../db/repositories/task.repository'
+import { INSERT_TASK, GET_TASK, UPDATE_TASK_STATUS, GET_TASKS_BY_USER, GET_PENDING_TASKS, GET_RUNNING_TASKS, CANCEL_TASK, INSERT_TASK_RESULT, GET_TASK_RESULTS, GET_LATEST_TASK_RESULT } from '../db/repositories/task.repository'
 
 export class TaskService {
   constructor(private pool: Pool) {}

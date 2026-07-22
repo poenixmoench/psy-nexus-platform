@@ -1,4 +1,4 @@
-import { KnownAgentType } from '@shared/types/AgentTypes';
+import { KnownAgentType } from '../types/AgentTypes';
 
 export interface WorkflowStep {
   agent: KnownAgentType;

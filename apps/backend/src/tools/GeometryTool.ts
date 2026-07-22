@@ -1,66 +1,92 @@
-import { injectable, inject } from 'tsyringe';
-import { GEOMETRY_ENGINE } from '@shared/geometry';
-type IGeometryPoint = any; //  from '@shared/geometry/geometry.engine';
-
-type GeometryCategory = keyof typeof GEOMETRY_ENGINE;
-type GeometryFormKey<T extends GeometryCategory> = keyof (typeof GEOMETRY_ENGINE)[T];
-
-class GeometryNotFoundError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'GeometryNotFoundError';
-  }
-}
-
-interface CalculateParams {
-  size?: number;
-  [key: string]: any;
-}
+import { injectable } from 'tsyringe';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @injectable()
 export class GeometryTool {
-  constructor(
-    @inject('Logger') private logger: any
-  ) {}
+  private registry = new Map<string, any>();
+  public formCount = 0;
+  public utilityCount = 0;
 
-  public calculate<T extends GeometryCategory>(
-    category: T,
-    formKey: GeometryFormKey<T>,
-    params: CalculateParams = {}
-  ): IGeometryPoint[] {
-    const size = params.size ?? 1;
-    const logParams = { category, formKey, params };
-
-    try {
-      this.logger.info('GeometryTool', `Berechne ${String(formKey)} in ${String(category)}`, logParams);
-
-      const categoryData = GEOMETRY_ENGINE[category];
-      if (!categoryData) {
-        throw new GeometryNotFoundError(`Kategorie '${String(category)}' nicht gefunden.`);
-      }
-
-      const formData = (categoryData as any)[formKey];
-      if (!formData) {
-        throw new GeometryNotFoundError(`Geometrie '${String(formKey)}' in '${String(category)}' nicht gefunden.`);
-      }
-
-      if (typeof formData.calculatePoints !== 'function') {
-         this.logger.warn('GeometryTool', `Form '${String(formKey)}' hat keine calculatePoints-Funktion.`, logParams);
-         return [];
-      }
-
-      return formData.calculatePoints(size);
-
-    } catch (error: any) {
-      this.logger.error('GeometryTool', error.message, logParams);
-      return [];
-    }
+  constructor() {
+    this.initializeRegistry();
   }
 
-  public getManifest(): { category: string; forms: string[] }[] {
-    return Object.entries(GEOMETRY_ENGINE).map(([category, forms]) => ({
-      category,
-      forms: Object.keys(forms as object),
-    }));
+  private initializeRegistry() {
+    const basePath = '/root/psy-nexus-platform/packages/shared/dist/geometry';
+    
+    const scanDirectory = (dir: string) => {
+      if (!fs.existsSync(dir)) return;
+      const items = fs.readdirSync(dir);
+      items.forEach(item => {
+        const fullPath = path.join(dir, item);
+        if (fs.statSync(fullPath).isDirectory()) {
+          scanDirectory(fullPath);
+        } else if (item.endsWith('.js')) {
+          try {
+            delete require.cache[require.resolve(fullPath)];
+            const mod = require(fullPath);
+            this.deepExtract(mod);
+          } catch (e) {}
+        }
+      });
+    };
+
+    scanDirectory(basePath);
+    console.log(`✅ [GEOMETRY_TOOL] Gott-Modus: ${this.formCount} Formeln & ${this.utilityCount} Utilities bereit.`);
+  }
+
+  private deepExtract(obj: any, depth = 0) {
+    if (depth > 5 || !obj || typeof obj !== 'object') return;
+
+    Object.entries(obj).forEach(([key, val]: [string, any]) => {
+      if (!val || typeof val !== 'object') return;
+
+      const hasCalc = typeof val.calculatePoints === 'function' || 
+                      typeof val.calculate === 'function' || 
+                      typeof val.generator === 'function';
+
+      if (hasCalc) {
+        const upperKey = key.toUpperCase();
+        if (!this.registry.has(upperKey)) {
+          this.registry.set(upperKey, val);
+          // Heuristik zur Unterscheidung
+          if (val.name || val.description || depth > 0) {
+            this.formCount++;
+          } else {
+            this.utilityCount++;
+          }
+        }
+      }
+      
+      if (depth < 2) {
+        this.deepExtract(val, depth + 1);
+      }
+    });
+  }
+
+  public getManifest() {
+    return [{
+      category: 'ALL_GEOMETRY',
+      forms: Array.from(this.registry.keys())
+    }];
+  }
+
+  public calculate(formKey: string, sequence = 'DEFAULT', params: any = {}) {
+    const formula = this.registry.get(formKey.toUpperCase());
+    if (!formula) {
+        console.warn(`⚠️ [GEOMETRY_TOOL] Formel nicht gefunden: ${formKey}`);
+        return null;
+    }
+
+    const calcFn = formula.calculatePoints || formula.calculate || formula.generator;
+    if (typeof calcFn !== 'function') return null;
+
+    try {
+      const radius = params.radius || params.size || 100;
+      return calcFn(radius, 64);
+    } catch (e) {
+      return null;
+    }
   }
 }

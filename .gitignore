@@ -19,3 +19,9 @@ db-data/
 postgres-data/
 *.sql
 !db-init.sql
+
+# local backups
+backups/**/*.tar.gz
+
+# local db backups
+backups/db/*.sql.gz

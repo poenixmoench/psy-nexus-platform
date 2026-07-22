@@ -1,0 +1,155 @@
+import { injectable, singleton } from 'tsyringe';
+import { PrismaClient } from '@prisma/client';
+
+@singleton()
+@injectable()
+export class WorkflowStateService {
+  private prisma: PrismaClient;
+  private readonly USER_ID = 'b38fe189-d3f3-4024-b1f1-9bf730cf0c58';
+  private readonly VALID_STATUSES = ['discovery', 'running', 'completed', 'failed', 'paused'];
+
+  constructor() {
+    // OPTIMIERUNG 1: Prisma Singleton Pattern (verhindert Connection-Leaks)
+    this.prisma = (global as any).__PRISMA_CLIENT || new PrismaClient();
+    if (!(global as any).__PRISMA_CLIENT) {
+      (global as any).__PRISMA_CLIENT = this.prisma;
+    }
+  }
+
+  /**
+   * OPTIMIERUNG 5: Input Validation Helper
+   */
+  private validateUuid(id: string): boolean {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(id);
+  }
+
+  private validateStatus(status: string): boolean {
+    return this.VALID_STATUSES.includes(status);
+  }
+
+  /**
+   * OPTIMIERUNG 7: JSON-Parsing Helper-Methode
+   */
+  private parseOutput(output: any): any {
+    if (typeof output === 'string') {
+      try {
+        return JSON.parse(output);
+      } catch (e) {
+        return output; // Bleibt String falls kein valides JSON
+      }
+    }
+    return output;
+  }
+
+  /**
+   * Erstellt einen neuen Workflow-Eintrag
+   * OPTIMIERUNG 3, 4, 5, 6: Return Types, Error Handling, Validation, Logging
+   */
+  async createWorkflow(id: string, agent: string, goal: string) {
+    try {
+      // Input Validation
+      if (!this.validateUuid(id)) {
+        console.error(`[WorkflowStateService] Invalid UUID format: ${id}`);
+        throw new Error('Invalid workflow ID format');
+      }
+      if (!goal || goal.trim().length === 0) {
+        console.error(`[WorkflowStateService] Empty goal provided`);
+        throw new Error('Goal cannot be empty');
+      }
+
+      const result = await (this.prisma as any).workflows.create({
+        data: {
+          id: id,
+          user_id: this.USER_ID,
+          title: `Vortex-Opus: ${agent}`,
+          description: goal.substring(0, 255),
+          status: 'running',
+          metadata: { agent, goal }
+        }
+      });
+
+      console.log(`[WorkflowStateService] Created workflow: ${id} for agent: ${agent}`);
+      return result;
+    } catch (error: any) {
+      console.error(`[WorkflowStateService] createWorkflow failed: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * OPTIMIERUNG 7: Ruft einen Workflow anhand der ID ab (Wichtig für previousOutput)
+   * OPTIMIERUNG 2, 3, 4, 5, 6: Return Types, Error Handling, Validation, Logging
+   */
+  async getWorkflow(id: string) {
+    try {
+      // Input Validation
+      if (!this.validateUuid(id)) {
+        console.error(`[WorkflowStateService] Invalid UUID format: ${id}`);
+        return null;
+      }
+
+      const result = await (this.prisma as any).workflows.findUnique({
+        where: { id }
+      });
+
+      if (result) {
+        console.log(`[WorkflowStateService] Retrieved workflow: ${id}`);
+      } else {
+        console.warn(`[WorkflowStateService] Workflow not found: ${id}`);
+      }
+
+      return result;
+    } catch (error: any) {
+      console.error(`[WorkflowStateService] getWorkflow failed: ${error.message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Aktualisiert den Status und speichert das Ergebnis in den Metadaten
+   * OPTIMIERUNG 3, 4, 5, 6, 7: Return Types, Error Handling, Validation, Logging, JSON Helper
+   */
+  async updateStatus(id: string, status: string, resultObj: any = {}) {
+    try {
+      // Input Validation
+      if (!this.validateUuid(id)) {
+        console.error(`[WorkflowStateService] Invalid UUID format: ${id}`);
+        throw new Error('Invalid workflow ID format');
+      }
+      if (!this.validateStatus(status)) {
+        console.error(`[WorkflowStateService] Invalid status: ${status}`);
+        throw new Error(`Invalid status: ${status}`);
+      }
+
+      const current = await (this.prisma as any).workflows.findUnique({ where: { id } });
+      if (!current) {
+        console.error(`[WorkflowStateService] Workflow not found for update: ${id}`);
+        throw new Error(`Workflow not found: ${id}`);
+      }
+
+      const meta = current?.metadata || {};
+      // OPTIMIERUNG 7: Nutze Helper-Methode für JSON-Parsing
+      const finalOutput = this.parseOutput(resultObj.output);
+
+      const result = await (this.prisma as any).workflows.update({
+        where: { id },
+        data: {
+          status: status,
+          metadata: {
+            ...meta,
+            last_result: finalOutput,
+            agent: meta.agent || resultObj.agentName
+          },
+          updated_at: new Date()
+        }
+      });
+
+      console.log(`[WorkflowStateService] Updated workflow ${id} to status: ${status}`);
+      return result;
+    } catch (error: any) {
+      console.error(`[WorkflowStateService] updateStatus failed: ${error.message}`);
+      throw error;
+    }
+  }
+}

@@ -27,7 +27,7 @@ export type RunStatus =
   | { type: 'FAILED'; errorCode: string; reason: string };
 
 export interface StigmergyPayload {
-  type: 'TASK' | 'DATA' | 'KNOWLEDGE' | 'STATUS' | 'ERROR' | 'APPROVAL_REQUEST';
+  type: 'TASK' | 'DATA' | 'KNOWLEDGE' | 'STATUS' | 'ERROR' | 'APPROVAL_REQUEST' | 'GEOMETRY_STRUCTURE' | 'GEOMETRY_STRUCTURE';
   data: Record<string, unknown>;
   reason?: string;
 }
@@ -48,4 +48,48 @@ export interface ContextDelta {
   currentHash: string;
   diffContent?: string;
   activeTags: StigmergyTag[];
+}
+
+/**
+ * Das universelle Eingabe-Format der Alpha-Flotte.
+ */
+export interface AgentInput {
+  query: string;
+  agentName: KnownAgentType;
+  context: {
+    delta: ContextDelta;       // Der aktuelle Delta-Zustand (siehe oben in der Datei)
+    sessionData?: any;
+    projectManifest?: any;
+  };
+  parameters?: Record<string, unknown>;
+}
+
+/**
+ * Das standardisierte Ausgabe-Format für konsistente Workflow-Verarbeitung.
+ */
+export interface AgentResult {
+  output: string;
+  newTags: StigmergyTag[];
+  success: boolean;
+  agentName: KnownAgentType;
+  error?: string;
+}
+
+export interface IExtendedGeometricForm {
+  id?: string;
+  name: string;
+  type?: string;
+  vortexPoints?: number[];
+  rodinVector?: [number, number, number];
+  faces?: number;
+  formula?: string;
+  description?: string;
+  data?: any;
+  [key: string]: any;
+}
+
+export interface IGeometryEngine {
+  getForm(id: string): IExtendedGeometricForm | undefined;
+  getAllForms(): IExtendedGeometricForm[];
+  PLATONIC_SOLIDS?: any;
 }

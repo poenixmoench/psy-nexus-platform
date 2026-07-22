@@ -1,10 +1,10 @@
 import { getDatabase } from './connection';
 
-export async function findUserByEmail(email: string) {
+export async function findUserByEmail(email: string): Promise<any> {
     return getDatabase()?.collection('users').findOne({ email });
 }
 
-export async function findUserByUsername(username: string) {
+export async function findUserByUsername(username: string): Promise<any> {
     return getDatabase()?.collection('users').findOne({ username });
 }
 

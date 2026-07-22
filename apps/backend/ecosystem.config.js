@@ -1,7 +1,7 @@
 module.exports = {
   apps: [{
     name: 'psy-backend',
-    script: 'dist/apps/backend/src/index.js',
+    script: 'dist/apps/backend/src/main.js',
     cwd: '/root/psy-nexus-platform/apps/backend',
     exec_mode: 'fork',
     instances: 1,

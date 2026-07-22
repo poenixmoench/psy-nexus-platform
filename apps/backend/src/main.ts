@@ -1,61 +1,46 @@
-import "module-alias/register";
-import * as path from "path";
-const moduleAlias = require("module-alias");
-
-const isProd = __filename.includes('dist');
-const baseDir = path.join(__dirname, '../../../../');
-
-// KORREKTUR: Im Prod-Modus (dist) gibt es keinen /src Unterordner in den Libs
-moduleAlias.addAliases({
-  '@shared/basis-agent': path.join(baseDir, isProd ? 'dist/libs/shared/basis-agent' : 'libs/shared/basis-agent/src'),
-  '@shared/geometry': path.join(baseDir, isProd ? 'dist/libs/shared/geometry' : 'libs/shared/geometry/src'),
-  '@shared/types': path.join(baseDir, isProd ? 'dist/packages/shared/src/types' : 'packages/shared/src/types'),
-  '@shared': path.join(baseDir, isProd ? 'dist/packages/shared/src' : 'packages/shared/src')
-});
-
+import "./alias-fix";
 import 'reflect-metadata';
+import * as dotenv from 'dotenv';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
 import { container } from 'tsyringe';
-import express from 'express';
-import http from 'http';
-import cors from 'cors';
-import { setupDIContainer } from './di/container';
-import { SocketService } from './services/SocketService';
-import apiRoutes from './routes/index';
+import { WorkflowStateService } from './services/WorkflowStateService';
+import { StigmergyService } from './services/StigmergyService';
+import { AgentExecutor } from './agents/AgentExecutor';
+import { OrionOrchestrator } from './orchestrator/OrionOrchestrator';
+import { GeometryTool } from './tools/GeometryTool';
+import { registerAllAgents } from './agents/AgentRegistry';
+import { EventEmitter2 } from 'eventemitter2';
 
 async function bootstrap() {
-  try {
-    setupDIContainer();
-    const app = express();
-    app.use(cors({ origin: "*" }));
-    app.use(express.json({ limit: '10mb' }));
+  dotenv.config();
+  const sharedBus = new EventEmitter2({ wildcard: true, delimiter: '.' });
+  (global as any).NEXUS_BUS = sharedBus;
 
-    const server = http.createServer(app);
-    const socketService = container.resolve(SocketService);
+  const app = await NestFactory.create(AppModule);
+  app.enableCors();
 
-    socketService.init(server);
-    app.use('/api', apiRoutes);
+  // Bridge NestJS -> tsyringe
+  // Wir holen die Instanzen aus dem Nest-Context
+  const workflowState = app.get(WorkflowStateService);
+  const stigmergy = app.get(StigmergyService);
+  
+  container.registerInstance(WorkflowStateService, workflowState);
+  container.registerInstance(StigmergyService, stigmergy);
+  
+  // Core Components & Tools
+  container.register("AgentExecutor", { useClass: AgentExecutor });
+  container.register(AgentExecutor, { useClass: AgentExecutor });
+  container.register(OrionOrchestrator, { useClass: OrionOrchestrator });
+  container.register(GeometryTool, { useClass: GeometryTool });
+  container.register('Logger', { useValue: console });
 
-    const PORT = process.env.PORT || 3005;
-    const httpServer = server.listen(PORT, () => {
-      console.log(`🚀 Nexus-Backend stabilisiert auf Port ${PORT} (${isProd ? 'PRODUCTION' : 'DEV'})`);
-    });
+  // Agenten-Registry laden
+  registerAllAgents();
 
-    // PROFESSIONELLES SIGNAL-HANDLING
-    const shutdown = () => {
-      console.log('🛑 Shutdown-Signal empfangen. Schließe Verbindungen...');
-      httpServer.close(() => {
-        console.log('👋 Nexus-Backend ordnungsgemäß beendet.');
-        process.exit(0);
-      });
-    };
-
-    process.on('SIGTERM', shutdown);
-    process.on('SIGINT', shutdown);
-
-  } catch (error) {
-    console.error('💥 Bootstrap-Fehler:', error);
-    process.exit(1);
-  }
+  const PORT = process.env.PORT || 3001;
+  await app.listen(PORT, () => {
+    console.log(`🚀 [NEXUS] Core online auf Port ${PORT}`);
+  });
 }
-
-bootstrap();
+bootstrap().catch(err => console.error("💥 BOOTSTRAP ERROR:", err));

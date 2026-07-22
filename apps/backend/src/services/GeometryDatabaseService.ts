@@ -21,7 +21,7 @@ export default class GeometryDatabaseService {
     const doc = { 
       ...geometry, 
       createdAt: new Date(), 
-      updatedAt: new Date() 
+      updated_at: new Date() 
     };
     const result = await this.collection.insertOne(doc);
     return result.insertedId.toString();

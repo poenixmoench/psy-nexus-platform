@@ -1,8 +1,10 @@
+import { ConcreteGeometryService } from '../services/ConcreteGeometryService';
 import ConsoleLogger from "../utils/ConsoleLogger";
 import { registerAgents } from "./modules/agent-module";
 import { container, Lifecycle } from "tsyringe";
 import { EventEmitter2 } from "eventemitter2";
 import { OrionOrchestrator } from "../orchestrator/OrionOrchestrator";
+import { WorkflowStateService } from '../services/WorkflowStateService';
 import { SocketService } from "../services/SocketService";
 import { GeometryTool } from "../tools/GeometryTool";
 import { ConcreteAgentExecutor } from "../executors/ConcreteAgentExecutor";
@@ -36,6 +38,8 @@ export const setupDIContainer = () => {
   }, SINGLETON);
 
   // Core Services
+  container.register(WorkflowStateService, { useClass: WorkflowStateService }, SINGLETON);
+  container.register(ConcreteGeometryService, { useClass: ConcreteGeometryService }, SINGLETON);
   container.register(OrionOrchestrator, { useClass: OrionOrchestrator }, SINGLETON);
   container.register(SocketService, { useClass: SocketService }, SINGLETON);
 

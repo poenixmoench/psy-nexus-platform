@@ -1,0 +1,44 @@
+import "./alias-fix";
+import 'reflect-metadata';
+import { BaseAgent } from '@shared/basis-agent/BaseAgent';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { container } from 'tsyringe';
+import { StigmergyService } from './services/StigmergyService';
+import { EventEmitter2 } from 'eventemitter2';
+import { registerAllAgents } from './agents/AgentRegistry';
+
+async function bootstrap() {
+  // 1. Infrastruktur (Bus) zuerst hochfahren
+  const sharedBus = new EventEmitter2({ wildcard: true, delimiter: '.' });
+  (global as any).NEXUS_BUS = sharedBus;
+  (BaseAgent as any).targetBus = sharedBus;
+
+  // 2. Agenten registrieren (jetzt sicher, da Bus existiert)
+  registerAllAgents();
+
+  const app = await NestFactory.create(AppModule);
+  app.enableCors();
+
+  // 3. Verbessertes Logging
+  sharedBus.onAny((event, value) => {
+    // Kürze sehr lange Outputs für bessere Lesbarkeit
+    const logValue = JSON.stringify(value);
+    const safeLog = logValue.length > 500 ? logValue.substring(0, 500) + '...' : logValue;
+    console.log(`📡 [BUS] ${String(event)}:`, safeLog);
+  });
+
+  const stigmergy = container.resolve(StigmergyService);
+  sharedBus.on('tag.emitted', async (tag) => {
+    try {
+      await stigmergy.saveTags([tag]);
+      console.log(`✅ [DB] Tag gespeichert: ${tag.sourceAgent}`);
+    } catch (err: any) {
+      console.error(`❌ [DB] Fehler: ${err.message}`);
+    }
+  });
+
+  await app.listen(3001);
+  console.log('🚀 NEXUS-CORE V4.2: OPERATIV (Optimized Architecture)');
+}
+bootstrap();

@@ -1,0 +1,71 @@
+import * as path from 'path';
+const moduleAlias = require('module-alias');
+
+// Runtime-Korrektur: __dirname ist in apps/backend/dist
+const rootPath = path.resolve(__dirname, '../../../../');
+moduleAlias.addAliases({
+  '@shared': path.join(rootPath, 'packages/shared/dist')
+});
+moduleAlias();
+
+console.log('[Runtime-Alias-Fix] @shared wurde auf den dist-Pfad umgebogen.');
+import * as path from "path";
+const moduleAlias = require("module-alias");
+
+const isProd = __filename.includes('dist');
+const baseDir = path.join(__dirname, '../../../../');
+
+// KORREKTUR: Im Prod-Modus (dist) gibt es keinen /src Unterordner in den Libs
+moduleAlias.addAliases({
+  '@shared/basis-agent': path.join(baseDir, isProd ? 'dist/libs/shared/basis-agent' : 'libs/shared/basis-agent/src'),
+  '@shared/geometry': path.join(baseDir, isProd ? 'dist/libs/shared/geometry' : 'libs/shared/geometry/src'),
+  '@shared/types': path.join(baseDir, isProd ? 'dist/packages/shared/src/types' : 'packages/shared/src/types'),
+  '@shared': path.join(baseDir, isProd ? 'dist/packages/shared/src' : 'packages/shared/src')
+});
+
+import 'reflect-metadata';
+import { container } from 'tsyringe';
+import express from 'express';
+import http from 'http';
+import cors from 'cors';
+import { setupDIContainer } from './di/container';
+import { SocketService } from './services/SocketService';
+import apiRoutes from './routes/index';
+
+async function bootstrap() {
+  try {
+    setupDIContainer();
+    const app = express();
+    app.use(cors({ origin: "*" }));
+    app.use(express.json({ limit: '10mb' }));
+
+    const server = http.createServer(app);
+    const socketService = container.resolve(SocketService);
+
+    socketService.init(server);
+    app.use('/api', apiRoutes);
+
+    const PORT = process.env.PORT || 3005;
+    const httpServer = server.listen(PORT, () => {
+      console.log(`🚀 Nexus-Backend stabilisiert auf Port ${PORT} (${isProd ? 'PRODUCTION' : 'DEV'})`);
+    });
+
+    // PROFESSIONELLES SIGNAL-HANDLING
+    const shutdown = () => {
+      console.log('🛑 Shutdown-Signal empfangen. Schließe Verbindungen...');
+      httpServer.close(() => {
+        console.log('👋 Nexus-Backend ordnungsgemäß beendet.');
+        process.exit(0);
+      });
+    };
+
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
+
+  } catch (error) {
+    console.error('💥 Bootstrap-Fehler:', error);
+    process.exit(1);
+  }
+}
+
+bootstrap();

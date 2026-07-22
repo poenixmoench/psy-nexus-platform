@@ -1,0 +1,46 @@
+import { injectable, inject } from 'tsyringe';
+import { AgentExecutor } from '../agents/AgentExecutor';
+import { WorkflowStateService } from '../services/WorkflowStateService';
+import { GeometryTool } from '../tools/GeometryTool';
+
+@injectable()
+export class OrionOrchestrator {
+  constructor(
+    @inject('AgentExecutor') private executor: AgentExecutor,
+    @inject(WorkflowStateService) private workflowState: WorkflowStateService,
+    @inject(GeometryTool) private geometryTool: GeometryTool
+  ) {}
+
+  async processRequestStreaming(request: any, onToken: (token: string) => void) {
+    const { workflowId, agent, input, sessionData } = request;
+    const targetAgent = agent || 'ORION_AGENT';
+    const rawInput = input || "";
+
+    await this.workflowState.createWorkflow(workflowId, targetAgent, rawInput);
+
+    try {
+      let enrichedInput = rawInput;
+      const manifest = this.geometryTool.getManifest();
+      const allForms = manifest.flatMap(m => m.forms || []);
+      const detectedForm = allForms.find(f => rawInput.toLowerCase().includes(f.toLowerCase()));
+
+      if (detectedForm) {
+        const data = this.geometryTool.calculate(detectedForm as any, 'RODIN' as any, { size: 100 });
+        if (data) {
+          enrichedInput = `${rawInput}\n\n### 📐 GEOMETRIE_DATA (EXACT)\nDATA: ${JSON.stringify(data)}\n\nDIREKTIVE: Nutze diese Koordinaten 1:1 für das SVG!`;
+          console.log(`[ORCHESTRATOR] 📐 Injected Geometry: ${detectedForm}`);
+        }
+      }
+
+      const result = await this.executor.execute(targetAgent, enrichedInput, sessionData);
+      const outputStr = typeof result.output === 'string' ? result.output : JSON.stringify(result.output);
+      onToken(outputStr);
+
+      await this.workflowState.updateStatus(workflowId, 'completed', result);
+    } catch (err: any) {
+      console.error("❌ [ORCHESTRATOR] Error:", err.message);
+      onToken(`SYSTEM-ERROR: ${err.message}`);
+      await this.workflowState.updateStatus(workflowId, 'failed', { error: err.message });
+    }
+  }
+}

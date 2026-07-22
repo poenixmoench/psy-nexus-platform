@@ -1,10 +1,20 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Agents {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String
+  status       String?   @default("online")
+  type         String?   @default("general")
+  capabilities Json?     @default("[]")
+  last_active  DateTime? @default(now()) @db.Timestamptz(6)
 }
 
 model agent_messages {
@@ -134,6 +144,17 @@ model project_artifacts {
   @@index([workflow_id, artifact_type], map: "idx_project_artifacts_workflow_type")
 }
 
+model stigmergy_tags {
+  id           String @id @db.Uuid
+  source_agent String
+  tag_type     String
+  payload      Json
+  timestamp    BigInt
+  ttl          Int?
+
+  @@index([timestamp], map: "idx_stigmergy_timestamp")
+}
+
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model tasks {
   id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -259,22 +280,15 @@ model workflows {
   @@index([user_id, status], map: "idx_workflows_user_status")
 }
 
-model Agents {
-  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name         String
-  status       String?   @default("online")
-  type         String?   @default("general")
-  capabilities Json?     @default("[]")
-  last_active  DateTime? @default(now()) @db.Timestamptz(6)
-}
+model geometry_cache {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  shape_id      String
+  version       String
+  params_hash   String
+  data          Json
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  last_accessed DateTime @default(now()) @db.Timestamptz(6)
 
-model stigmergy_tags {
-  id           String    @id @db.Uuid
-  source_agent String
-  tag_type     String
-  payload      Json
-  timestamp    BigInt
-  ttl          Int?
-
-  @@index([timestamp], map: "idx_stigmergy_timestamp")
+  @@unique([shape_id, params_hash, version])
+  @@index([shape_id, version], map: "idx_geo_cache_lookup")
 }

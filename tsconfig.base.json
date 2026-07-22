@@ -13,8 +13,8 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
-      "@shared/basis-agent": ["libs/shared/basis-agent/src/index.ts"],
-      "@shared/geometry": ["libs/shared/geometry/src/index.ts"],
+      "@shared/basis-agent": ["packages/shared/src/basis-agent/BaseAgent.ts"],
+      "@shared/geometry": ["packages/shared/src/geometry/index.ts"],
       "@shared/types/*": ["packages/shared/src/types/*"],
       "@shared/config/*": ["packages/shared/src/config/*"],
       "@shared/*": ["packages/shared/src/*"]

@@ -15,7 +15,7 @@ interface IConversation {
   agentName: string;
   messages: IConversationMessage[];
   createdAt: Date;
-  updatedAt: Date;
+  updated_at: Date;
 }
 
 class ConversationService {
@@ -67,7 +67,7 @@ class ConversationService {
       agentName: 'CodeReviewAgent',
       messages: mockMessages1,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updated_at: new Date()
     });
 
     this.conversations.set('run_security_456', {
@@ -75,7 +75,7 @@ class ConversationService {
       agentName: 'SecurityAuditAgent',
       messages: mockMessages2,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updated_at: new Date()
     });
 
     this.conversations.set('run_performance_789', {
@@ -83,7 +83,7 @@ class ConversationService {
       agentName: 'PerformanceOptimizer',
       messages: mockMessages3,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updated_at: new Date()
     });
 
     this.conversations.set('run_arch_101', {
@@ -91,7 +91,7 @@ class ConversationService {
       agentName: 'ArchitectureAnalyzer',
       messages: mockMessages4,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updated_at: new Date()
     });
 
     this.conversations.set('run_bug_202', {
@@ -99,7 +99,7 @@ class ConversationService {
       agentName: 'BugDetectorAgent',
       messages: mockMessages5,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updated_at: new Date()
     });
   }
 
@@ -124,7 +124,7 @@ class ConversationService {
       throw new Error(`Conversation not found for runId ${runId}`);
     }
     conversation.messages.push(message);
-    conversation.updatedAt = new Date();
+    conversation.updated_at = new Date();
     console.log(`[ConversationService] addMessageToConversation: Message added to conversation for runId ${runId}`);
   }
 
@@ -153,7 +153,7 @@ class ConversationService {
       agentName,
       messages: [],
       createdAt: new Date(),
-      updatedAt: new Date()
+      updated_at: new Date()
     };
     this.conversations.set(runId, newConversation);
     console.log(`[ConversationService] createConversation: Conversation created for runId ${runId}`);

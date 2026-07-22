@@ -2,75 +2,83 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AGENT_PROFILES = void 0;
 exports.AGENT_PROFILES = {
-    OrionAgent: {
+    ORION_AGENT: {
         id: 'OrionAgent',
         name: 'OrionAgent',
-        role: "Strategic Nexus Lead",
-        description: "Lead Architect & Design-Trend-Scout. Orchestriert den Workflow nach der PSY-NEXUS CORE-CONSTITUTION.",
+        displayName: 'Orion Zentrale',
+        role: "NEXUS HAUPTSYSTEM",
+        description: "Zentraler Knotenpunkt für Koordination; kann bei Bedarf für komplexe Geometrien und Muster auf die interne Formelsammlung zugreifen und steuert die globale SEO-Strategie.",
         category: "Strategic",
         color: "#00f2ff",
         status: "active"
     },
-    PlanAgent: {
+    PLAN_AGENT: {
         id: 'PlanAgent',
         name: 'PlanAgent',
-        role: "Workflow-Architect",
-        description: "Projekt-Koordination und Link-Graph-Precision. Fokus auf Manifest-Integrität und strategische Planung.",
+        displayName: 'Planungs-Agent',
+        role: "Strategie-Einheit",
+        description: "Strukturiert Projekte und Abläufe; kann bei Bedarf für komplexe Geometrien und Muster auf die interne Formelsammlung zugreifen, um die Informationsarchitektur zu optimieren.",
         category: "Management",
         color: "#7000ff",
         status: "active"
     },
-    DesignAlchemistAgent: {
+    DESIGN_ALCHEMIST_AGENT: {
         id: 'DesignAlchemistAgent',
         name: 'DesignAlchemistAgent',
-        role: "Visual Alchemist & Geometry Engine Lead",
-        description: "Nutzt vordefinierte mathematische Modelle aus /shared/math/geometry. Implementiert Sacred Geometry (Phi, Fibonacci, LCH) durch direkten Zugriff auf die Formelsammlung.",
+        displayName: 'Design-Alchemist',
+        role: "UI/UX Transformation",
+        description: "Zuständig für visuelle Gestaltung; kann bei Bedarf für komplexe Geometrien und Muster auf die interne Formelsammlung zugreifen, um ästhetische und funktionale SEO-Interfaces zu schaffen.",
         category: "Design",
         color: "#ff0055",
         formulaPath: "libs/shared/geometry",
         status: "active"
     },
-    FrontendMeisterAgent: {
+    FRONTEND_MEISTER_AGENT: {
         id: 'FrontendMeisterAgent',
         name: 'FrontendMeisterAgent',
-        role: "SEO & Interface Constructor",
-        description: "Erstellt performante Vue3 Komponenten. Fokus auf Core Web Vitals, semantisches HTML und Clean Code Standards.",
+        displayName: 'Frontend-Meister',
+        role: "Client-Architektur",
+        description: "Implementiert moderne Web-Komponenten; kann bei Bedarf für komplexe Geometrien und Muster auf die interne Formelsammlung zugreifen, um Core Web Vitals und SEO-Strukturen zu stärken.",
         category: "Frontend",
         color: "#00ff88",
         status: "active"
     },
-    BackendArchitectAgent: {
+    BACKEND_ARCHITEKT_AGENT: {
         id: 'BackendArchitectAgent',
         name: 'BackendArchitectAgent',
-        role: "Logic-Infrastruct",
-        description: "Wächter der API-Integrität. Optimiert Multi-Threading und Ressourcen-Nutzung auf Hetzner-Infrastruktur.",
+        displayName: 'Backend-Architekt',
+        role: "Server-Logik",
+        description: "Verantwortlich für API und Ressourcen; kann bei Bedarf für komplexe Geometrien und Muster auf die interne Formelsammlung zugreifen, um Daten-Strukturen effizient zu skalieren.",
         category: "Backend",
         color: "#ffaa00",
         status: "active"
     },
-    QaGuruAgent: {
-        role: "Reliability Guard",
+    QA_GURU_AGENT: {
         id: 'QaGuruAgent',
         name: 'QaGuruAgent',
-        description: "Validiert Code-Standards (WCAG 2.1) und SEO-Integrität. Verhindert Redundanzen und sichert DRY-Compliance.",
+        displayName: 'Qualitäts-Guru',
+        role: "Sicherung & Test",
+        description: "Überwacht Code-Qualität; kann bei Bedarf für komplexe Geometrien und Muster auf die interne Formelsammlung zugreifen, um technische SEO-Compliance und Standards zu validieren.",
         category: "QA",
         color: "#00aaff",
         status: "active"
     },
-    OptimizerAgent: {
+    OPTIMIERER_AGENT: {
         id: 'OptimizerAgent',
         name: 'OptimizerAgent',
-        role: "Efficiency Tuner",
-        description: "Refactored Code für maximale Lesbarkeit. Hinterlässt das System immer sauberer als zuvor.",
+        displayName: 'Optimierungs-Agent',
+        role: "Performance-Turbo",
+        description: "Maximiert die Systemeffizienz; kann bei Bedarf für komplexe Geometrien und Muster auf die interne Formelsammlung zugreifen, um Ladezeiten und SEO-Rankings zu verbessern.",
         category: "Optimization",
         color: "#ffff00",
         status: "active"
     },
-    DokumentationAgent: {
+    DOKUMENTATION_AGENT: {
         id: 'DokumentationAgent',
         name: 'DokumentationAgent',
-        role: "Deployment-Chronist",
-        description: "Finaler Code-Validator. Stellt die Produktionsreife sicher und dokumentiert alle mathematischen Modelle.",
+        displayName: 'Dokumentations-Agent',
+        role: "SEO-Strategie & Validierung",
+        description: "Hüter der globalen SEO-Strategie und finaler Code-Validator; kann bei Bedarf für komplexe Geometrien und Muster auf die interne Formelsammlung zugreifen, um technisches Wissen suchmaschinenoptimiert aufzubereiten.",
         category: "Support",
         color: "#ffffff",
         status: "active"

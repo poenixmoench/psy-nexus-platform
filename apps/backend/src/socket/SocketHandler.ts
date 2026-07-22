@@ -3,8 +3,10 @@ import { exec } from 'child_process';
 import util from 'util';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+import { PrismaClient } from '@prisma/client'; // ← NEU: Prisma-Import für Alpha-Lock
 
 const execPromise = util.promisify(exec);
+const prisma = new PrismaClient(); // ← NEU: Prisma-Instanz für DB-Zugriff
 
 interface DeploymentResult {
   success: boolean;
@@ -32,7 +34,11 @@ async function validateDirectory(dirPath: string): Promise<boolean> {
 
 class SocketHandler {
   private io: Server;
-  constructor(io: Server) { this.io = io; this.initializeSockets(); }
+  
+  constructor(io: Server) { 
+    this.io = io; 
+    this.initializeSockets(); 
+  }
 
   private initializeSockets() {
     this.io.on('connection', (socket: Socket) => {
@@ -43,23 +49,41 @@ class SocketHandler {
         try {
           const { sourceDir, targetDir } = DEPLOYMENT_PATHS;
           await fs.mkdir(targetDir, { recursive: true });
-          
+
           // Kopiert das reine Agenten-Ergebnis ins Staging
           const command = `rsync -av --delete "${sourceDir}/" "${targetDir}/"`;
           await execPromise(command);
-          
-          socket.emit('deployment-result', { 
-            success: true, 
-            message: 'Check auf: psy-nexus.live/staging' 
+
+          socket.emit('deployment-result', {
+            success: true,
+            message: 'Check auf: psy-nexus.live/staging'
           });
         } catch (error: any) {
           socket.emit('deployment-result', { success: false, error: error.message });
         }
       });
 
-      // 2. SCHRITT: Von STAGING zu LIVE (Hauptseite)
+      // 2. SCHRITT: Von STAGING zu LIVE (Hauptseite) – MIT ALPHA-LOCK
       socket.on('publish-to-production', async () => {
         try {
+          // 🔒 ALPHA-LOCK PRÜFUNG (NEU – VOR dem rsync!)
+          // Prüft, ob Tags mit Status WAITING_FOR_ALPHA existieren
+          const pendingLock = await prisma.$queryRaw<{ count: bigint }[]>`
+            SELECT COUNT(*) FROM stigmergy_tags 
+            WHERE payload->'data'->>'status' = 'WAITING_FOR_ALPHA'
+               OR payload->>'status' = 'WAITING_FOR_ALPHA'
+          `;
+
+          if (Number(pendingLock[0].count) > 0) {
+            console.log(`[ALPHA-LOCK] 🛡️ Deployment blockiert – ${pendingLock[0].count} Tag(s) warten auf Freigabe`);
+            socket.emit('deployment-result', { 
+              success: false, 
+              error: 'Alpha-Lock aktiv – Freigabe erforderlich' 
+            });
+            return; // Abbruch vor rsync!
+          }
+
+          // Bestehende Logik (unverändert)
           const { targetDir, prodDir } = DEPLOYMENT_PATHS;
 
           // Sicherheitscheck: Ist überhaupt was im Staging?
@@ -70,11 +94,12 @@ class SocketHandler {
           const command = `rsync -av --delete "${targetDir}/" "${prodDir}/"`;
           const { stdout } = await execPromise(command);
 
-          socket.emit('deployment-result', { 
-            success: true, 
-            message: '🔥 LIVE! Die Hauptseite wurde aktualisiert.' 
+          socket.emit('deployment-result', {
+            success: true,
+            message: '🔥 LIVE! Die Hauptseite wurde aktualisiert.'
           });
         } catch (error: any) {
+          console.error(`[DEPLOYMENT-ERROR]: ${error.message}`);
           socket.emit('deployment-result', { success: false, error: error.message });
         }
       });

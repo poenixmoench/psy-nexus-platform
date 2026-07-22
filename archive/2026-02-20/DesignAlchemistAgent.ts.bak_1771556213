@@ -1,0 +1,39 @@
+import { BaseAgent } from '@shared/basis-agent/BaseAgent';
+import { AgentResult, StigmergyTag } from '@shared/types/AgentTypes';
+import { v4 as uuidv4 } from 'uuid';
+
+export class DesignAlchemistAgent extends BaseAgent {
+  public readonly name = 'DESIGN_ALCHEMIST_AGENT';
+
+  public async processDelta(payload: any): Promise<AgentResult> {
+    console.log(`🧪 [${this.name}] Alchemistische Transmutation der Geometrie...`);
+    
+    const aiResponse = {
+      vertices: [[0, 0, 0], [1, 2, 4], [8, 7, 5]],
+      description: "Rodin-Vortex 3-6-9 Geometrie-Vektor-Set."
+    };
+
+    const designTag: StigmergyTag = {
+      id: uuidv4(),
+      sourceAgent: this.name,
+      timestamp: Date.now(),
+      namespace: 'global',
+      payload: {
+        type: 'GEOMETRY_STRUCTURE' as any,
+        data: {
+          vertices: aiResponse.vertices,
+          status: 'completed'
+        }
+      }
+    };
+
+    return {
+      // Wir casten hier auf any, um das string-Interface zu befriedigen, 
+      // behalten aber das Objekt für unseren WorkflowStateService
+      output: aiResponse as any, 
+      newTags: [designTag],
+      success: true,
+      agentName: this.name as any
+    };
+  }
+}

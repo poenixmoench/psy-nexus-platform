@@ -1,0 +1,33 @@
+import { container } from 'tsyringe';
+import { BaseAgent } from '@shared/basis-agent/BaseAgent';
+import { OrionAgent } from './OrionAgent';
+import { PlanAgent } from './PlanAgent';
+import { DesignAlchemistAgent } from './DesignAlchemistAgent';
+import { FrontendMeisterAgent } from './FrontendMeisterAgent';
+import { BackendArchitektAgent } from './BackendArchitektAgent';
+import { QAGuruAgent } from './QAGuruAgent';
+import { OptimiererAgent } from './OptimiererAgent';
+import { DokumentationAgent } from './DokumentationAgent';
+
+export { BaseAgent };
+export const AGENT_MAP: Record<string, any> = {
+  'ORION_AGENT': OrionAgent,
+  'PLAN_AGENT': PlanAgent,
+  'DESIGN_ALCHEMIST_AGENT': DesignAlchemistAgent,
+  'FRONTEND_MEISTER_AGENT': FrontendMeisterAgent,
+  'BACKEND_ARCHITEKT_AGENT': BackendArchitektAgent,
+  'QA_GURU_AGENT': QAGuruAgent,
+  'OPTIMIERER_AGENT': OptimiererAgent,
+  'DOKUMENTATION_AGENT': DokumentationAgent
+};
+
+export const KNOWN_AGENTS_SET = new Set(Object.keys(AGENT_MAP));
+export function mapToInternalType(name: string): any { return name; }
+
+export function registerAllAgents() {
+  console.log('📦 [REGISTRY] Versiegle alle 8 Agenten...');
+  Object.entries(AGENT_MAP).forEach(([token, agentClass]) => {
+    container.registerSingleton(token as any, agentClass as any);
+    container.register(BaseAgent as any, { useClass: agentClass as any });
+  });
+}

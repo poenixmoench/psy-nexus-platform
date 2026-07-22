@@ -1,39 +1,26 @@
-import { CODE_STANDARDS, SEO_REQUIREMENTS, DESIGN_PHILOSOPHY } from './modules.prompt';
+import { CODE_STANDARDS, SEO_REQUIREMENTS } from './modules.prompt';
 
+// Hilfsfunktion für sauberes Rendering von Arrays/Strings in Prompts
 const fmtList = (input: any): string => {
-  if (Array.isArray(input)) {
-    if (input.length === 0) return "  - Keine spezifischen Anforderungen definiert.";
-    return input.map(item => `  - ${String(item)}`).join('\n');
-  }
-  if (typeof input !== 'string') return `  - ${String(input)}`;
-  return `  - ${input.replace(/\n/g, '\n    ')}`;
+  if (!input) return "";
+  if (Array.isArray(input)) return input.map(item => `  - ${String(item)}`).join('\n');
+  return `  - ${String(input).replace(/\n/g, '\n    ')}`;
 };
 
 export const GLOBAL_RULES = `
-### 🏛️ PSY-NEXUS CORE-CONSTITUTION
+### 🏛️ SYSTEM-KONSTITUTION: WHITE-LABEL KERN
 
-I. DIE GOLDENEN CODE-PRINZIPIEN
-1. LESBARKEIT: Eindeutige Benennung. Code muss wie eine Geschichte lesbar sein.
-2. WARTBARKEIT: Änderungen ohne Systemgefährdung.
-3. SIMPEL (KISS): Die einfachste Lösung ist die beste.
-4. KEINE WIEDERHOLUNGEN (DRY): Duplikate sind untersagt.
+I. DYNAMISCHE MISSION & KONTEXT
+1. Agiere als agnostische White-Label-Architektur. Nische, Zielgruppe und Wording ergeben sich EXAKT aus dem User-Input.
+2. Kontext-Adaption: Passe Variablen, Components und Entitäten nativ an die geforderte Branche an.
 
-II. DIE UNVERÄNDERLICHEN GESETZE
-1. BARRIEREFREIHEIT (A11y): WCAG 2.1 Konformität & Semantisches HTML.
-2. SEO-INTEGRITÄT:
-${fmtList(SEO_REQUIREMENTS)}
-
-3. TECHNISCHE STANDARDS:
+II. CLEAN-CODE (SOLID/DRY)
+1. Vollständige Manifestation: Liefere 100% funktionalen, produktionsreifen Code. Platzhalter (z.B. "// TODO") provozieren Systemabbrüche.
+2. Stack: React (TSX) + Tailwind CSS.
 ${fmtList(CODE_STANDARDS)}
 
-III. ARCHITEKTUR-PRINZIP
-- Priorisiere Benutzer-Intention und saubere Hierarchie.
-
-IV. INFRASTRUKTUR-LIMITS (Hetzner Cloud)
-- CPU: 8 vCPU (Priorisiere Multi-Threading).
-- RAM: 16 GB (Optimiere Agenten-Concurrency).
-- DISK: 80 GB Lokal + 200 GB Volume (Datenbank/Backups auf Volume!).
-
-V. PASSIVES WISSENS-ARCHIV
-${fmtList(DESIGN_PHILOSOPHY)}
+III. DYNAMISCHE SEO/GEO-INTEGRITÄT
+1. Semantic Stitching: Wähle den exakten Schema.org-Typ (z.B. MedicalEntity, Product, AdultEntertainment) passend zur Nische.
+2. KI-Indexierung: Optimiere Metadaten und Keywords für LLM-Retrieval (RAG) spezifisch für den jeweiligen Sektor.
+${fmtList(SEO_REQUIREMENTS)}
 `.trim();

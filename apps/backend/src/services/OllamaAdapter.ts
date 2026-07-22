@@ -7,7 +7,7 @@ import axios from 'axios';
 @injectable()
 export class OllamaAdapter {
   private readonly OLLAMA_BASE_URL = 'http://localhost:11434';
-  private readonly STRATEGIC_RESERVE = 'qwen2.5:14b';
+  private readonly STRATEGIC_RESERVE = 'qwen3:32b';
   private readonly WORKBENCH = 'qwen2.5-coder:14b';
   
   private ollamaOnline: boolean = false;
@@ -62,7 +62,7 @@ export class OllamaAdapter {
         stream: false,
         format: 'json',
         options: { temperature: 0.2, num_ctx: 8192 }
-      }, { timeout: 45000 }); // 45 Sekunden für 14B Inference
+      }, { timeout: 300000 }); // 45 Sekunden für 14B Inference
 
       const duration = Date.now() - startTime;
       console.log(`[OllamaAdapter] ${agentName} -> ${model} (${duration}ms)`);

@@ -1,42 +1,31 @@
 import { injectable } from 'tsyringe';
 import { container } from '../di/index';
-import { AgentExecutor, AgentInput, AgentResult } from "../types/AgentExecutor";
-import { BaseAgent } from "../agents/AgentRegistry";
-import {
-  KnownAgentType,
-  mapToInternalType,
-  AGENT_MAP,
-  KNOWN_AGENTS_SET
-} from "../agents/AgentRegistry";
+import { AgentExecutor } from "../types/AgentExecutor";
+import { AgentInput, AgentResult, KnownAgentType } from '@shared/types/AgentTypes';
+import { BaseAgent, mapToInternalType, KNOWN_AGENTS_SET } from "../agents/AgentRegistry";
 
 @injectable()
 export class ConcreteAgentExecutor implements AgentExecutor {
-  async execute(agentName: string, input: AgentInput): Promise<AgentResult> {
-    // 1. Mapping versuchen
+  async execute(agentName: KnownAgentType, input: AgentInput): Promise<AgentResult> {
     const mappedInternalName = mapToInternalType(agentName);
 
-    // 2. Prüfung: Ist der Name (gemappt oder original) auflösbar?
     let finalName: KnownAgentType;
 
-    // Definiere normalizedAgentName für den zweiten Check
     const normalizedAgentName = agentName.trim().toUpperCase().replace(/-/g, '_');
 
     if (KNOWN_AGENTS_SET.has(mappedInternalName)) {
-      finalName = mappedInternalName;
+      finalName = mappedInternalName as any;
     } else if (KNOWN_AGENTS_SET.has(normalizedAgentName)) {
       finalName = normalizedAgentName as KnownAgentType;
     } else {
-      // 3. Fehlerbehandlung
-      const availableInternal = Object.keys(AGENT_MAP).join(', ');
-
+      const availableInternal = Object.keys(KNOWN_AGENTS_SET).join(', ');
       throw new Error(
-        `Agent "${agentName}" konnte nicht aufgelöst werden. ` +
-        `Verfügbare interne Klassen: [${availableInternal}].`
+        `Agent "${agentName}" konnte nicht aufgelöst werden. Verfügbare interne Klassen: [${availableInternal}].`
       );
     }
 
-    // 4. Erfolgreiche Auflösung
     const agent = container.resolve<BaseAgent>(finalName);
+    // Die processDelta-Methode erwartet jetzt das vollständige AgentInput
     return agent.processDelta(input);
   }
 }

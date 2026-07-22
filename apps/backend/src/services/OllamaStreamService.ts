@@ -1,3 +1,4 @@
+import { AGENT_CONFIGS } from './AgentConfigs';
 import { Response } from 'express';
 
 export const DUMMY_EXPORT = true;
@@ -5,8 +6,8 @@ export const DUMMY_EXPORT = true;
 const SIGNATURE = '🎬[OLLAMA-STREAM-SERVICE]';
 
 export class OllamaStreamService {
-    private readonly agentModel = process.env.OLLAMA_MODEL || 'qwen2.5:14b';
-    private readonly ollamaApiUrl = process.env.OLLAMA_API_URL || 'http://host.docker.internal:11434';
+    private readonly agentModel = process.env.OLLAMA_MODEL || 'qwen3:32b';
+    private readonly ollamaApiUrl = process.env.OLLAMA_API_URL || 'http://127.0.0.1:11434';
 
     private async internalStreamChat(
         prompt: string,
@@ -25,8 +26,9 @@ export class OllamaStreamService {
 
             const chatEndpoint = `${this.ollamaApiUrl}/api/chat`;
             
+            const agentConfig = (AGENT_CONFIGS as any)[agentName] || AGENT_CONFIGS['ORION_AGENT'];
             const payload = {
-                model: this.agentModel,
+                model: agentConfig?.model || 'qwen3:32b',
                 messages: [
                     {
                         role: 'system',

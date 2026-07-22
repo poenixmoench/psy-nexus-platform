@@ -1,14 +1,14 @@
 export const llmConfig = {
   baseUrl: "http://localhost:11434",
   models: {
-    coding: "qwen2.5-coder:14b",
-    communication: "qwen2.5:14b"
+    coding: "qwen3:32b",
+    communication: "qwen3:32b"
   },
   agentMapping: {
     OrionAgent: "communication",
     DialogAgent: "communication",
     PlanAgent: "communication",
-    DokumentationAgent: "communication",
+    DokumentationAgent: "coding",
     
     BackendArchitectAgent: "coding",
     FrontendMeisterAgent: "coding",
@@ -20,6 +20,6 @@ export const llmConfig = {
 
 // Alias für Abwärtskompatibilität mit alten Typ-Dateien
 export const LLM_MODELS = {
-  CODING: "qwen2.5-coder:14b",
-  CHAT: "qwen2.5:14b"
+  CODING: "qwen3:32b",
+  CHAT: "qwen3:32b"
 };

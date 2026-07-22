@@ -31,7 +31,7 @@ export const AGENT_PROFILES: Record<string, IAgentProfile> = {
     color: "#7000ff",
     status: "active"
   },
-  DesignAlchemistAgent: {
+  DESIGN_ALCHEMIST_AGENT: {
     id: 'DesignAlchemistAgent',
     name: 'DesignAlchemistAgent',
     displayName: 'Design-Alchemist',
@@ -42,7 +42,7 @@ export const AGENT_PROFILES: Record<string, IAgentProfile> = {
     formulaPath: "libs/shared/geometry",
     status: "active"
   },
-  FrontendMeisterAgent: {
+  FRONTEND_MEISTER_AGENT: {
     id: 'FrontendMeisterAgent',
     name: 'FrontendMeisterAgent',
     displayName: 'Frontend-Meister',
@@ -52,7 +52,7 @@ export const AGENT_PROFILES: Record<string, IAgentProfile> = {
     color: "#00ff88",
     status: "active"
   },
-  BackendArchitectAgent: {
+  BACKEND_ARCHITEKT_AGENT: {
     id: 'BackendArchitectAgent',
     name: 'BackendArchitectAgent',
     displayName: 'Backend-Architekt',
@@ -62,7 +62,7 @@ export const AGENT_PROFILES: Record<string, IAgentProfile> = {
     color: "#ffaa00",
     status: "active"
   },
-  QaGuruAgent: {
+  QA_GURU_AGENT: {
     id: 'QaGuruAgent',
     name: 'QaGuruAgent',
     displayName: 'Qualitäts-Guru',
@@ -72,7 +72,7 @@ export const AGENT_PROFILES: Record<string, IAgentProfile> = {
     color: "#00aaff",
     status: "active"
   },
-  OptimizerAgent: {
+  OPTIMIERER_AGENT: {
     id: 'OptimizerAgent',
     name: 'OptimizerAgent',
     displayName: 'Optimierungs-Agent',
@@ -82,7 +82,7 @@ export const AGENT_PROFILES: Record<string, IAgentProfile> = {
     color: "#ffff00",
     status: "active"
   },
-  DokumentationAgent: {
+  DOKUMENTATION_AGENT: {
     id: 'DokumentationAgent',
     name: 'DokumentationAgent',
     displayName: 'Dokumentations-Agent',

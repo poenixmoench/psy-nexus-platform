@@ -1,0 +1,50 @@
+import { injectable, singleton } from 'tsyringe';
+import { PrismaClient } from '@prisma/client';
+
+@singleton()
+@injectable()
+export class WorkflowStateService {
+  private prisma: PrismaClient;
+  private readonly USER_ID = 'b38fe189-d3f3-4024-b1f1-9bf730cf0c58';
+
+  constructor() {
+    this.prisma = new PrismaClient();
+  }
+
+  async createWorkflow(id: string, agent: string, goal: string) {
+    return await (this.prisma as any).workflows.create({
+      data: {
+        id: id,
+        user_id: this.USER_ID,
+        title: `Vortex-Opus: ${agent}`,
+        description: goal.substring(0, 255),
+        status: 'running',
+        metadata: { agent, goal }
+      }
+    });
+  }
+
+  async updateStatus(id: string, status: string, resultObj: any = {}) {
+    const current = await (this.prisma as any).workflows.findUnique({ where: { id } });
+    const meta = current?.metadata || {};
+
+    // Sicherstellen, dass das 'output' Feld wirklich als Objekt landet
+    let finalOutput = resultObj.output;
+    if (typeof finalOutput === 'string') {
+      try { finalOutput = JSON.parse(finalOutput); } catch (e) { /* Bleibt String falls kein JSON */ }
+    }
+
+    return await (this.prisma as any).workflows.update({
+      where: { id },
+      data: { 
+        status: status, 
+        metadata: { 
+          ...meta,
+          last_result: finalOutput,
+          agent: meta.agent || resultObj.agentName
+        },
+        updated_at: new Date()
+      }
+    });
+  }
+}

@@ -1,16 +1,10 @@
 #!/bin/bash
-echo "🔧 Injecting module markers into dist..."
-
-# Basis Agent Fix
-mkdir -p dist/libs/shared/basis-agent
-echo '{"name": "@shared/basis-agent", "main": "./src/index.js"}' > dist/libs/shared/basis-agent/package.json
-
-# Geometry Fix
-mkdir -p dist/libs/shared/geometry
-echo '{"name": "@shared/geometry", "main": "./src/index.js"}' > dist/libs/shared/geometry/package.json
-
-# Config Fix
-mkdir -p dist/packages/shared/src/config
-echo '{"name": "@shared/config", "main": "./index.js"}' > dist/packages/shared/src/config/package.json
-
-echo "✅ Dist modules patched successfully."
+echo "--- Alpha-Build: Behalte Monorepo-Struktur bei ---"
+if [ -d "dist/apps/backend/src" ]; then
+    # Wir kopieren die Files nach oben, behalten aber den Rest (packages)
+    cp -r dist/apps/backend/src/* dist/
+    echo "dist-Ordner geglaettet. Shared-Logik bleibt erhalten."
+else
+    echo "Struktur-Check: dist/apps/backend/src nicht gefunden."
+fi
+exit 0

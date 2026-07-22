@@ -1,15 +1,20 @@
 {
   "name": "psy-nexus-backend",
   "version": "1.0.0",
-  "main": "dist/apps/backend/src/main.js",
+  "main": "dist/main.js",
   "scripts": {
-    "start": "node dist/apps/backend/src/main.js",
-    "build": "tsc && ./fix-modules.sh"
+    "start": "node dist/main.js",
+    "build": "npx prisma generate && tsc && ./fix-modules.sh && node scripts/finalize-build.js",
+    "clean": "rm -rf dist src/generated/prisma",
+    "build:safe": "python3 /usr/local/bin/nexus-ts-scan.py src/agents/AgentExecutor.ts && npx tsc --noEmit && npm run build"
   },
   "dependencies": {
     "@nestjs/event-emitter": "^3.0.1",
+    "@nestjs/platform-express": "^11.1.13",
     "@octokit/rest": "^22.0.1",
-    "axios": "^1.13.4",
+    "@prisma/client": "5.19.1",
+    "@types/express": "^5.0.6",
+    "axios": "^1.13.6",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
@@ -24,7 +29,7 @@
     "mongodb": "^7.0.0",
     "mongoose": "^9.1.5",
     "pg": "^8.16.3",
-    "prisma": "^7.2.0",
+    "prisma": "5.19.1",
     "qs": "^6.14.1",
     "redis": "^5.10.0",
     "socket.io": "^4.8.3",

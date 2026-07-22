@@ -1,16 +1,32 @@
-import { injectable } from 'tsyringe';
-import { BaseAgent } from '@shared/basis-agent';
-import { ContextDelta, StigmergyTag, KnownAgentType } from '@shared/types/AgentTypes';
+import { injectable, inject } from 'tsyringe';
+import { BaseAgent } from '@shared/basis-agent/BaseAgent';
+import { AIService } from '../services/AIService';
 
 @injectable()
 export class OptimiererAgent extends BaseAgent {
-  public readonly name: KnownAgentType = 'OPTIMIERER_AGENT';
-  public async processDelta(delta: ContextDelta) {
-    // Nutze diffContent (vorhanden) statt modifiedFiles (Phantasie)
-    const changeSize = delta?.diffContent?.length || 0;
-    return { 
-      text: `[${this.name}] Delta-Optimierung gestartet. Analyse von ${changeSize} Zeichen im Diff.`, 
-      newTags: [] 
+  public readonly name = 'OPTIMIERER_AGENT';
+  
+  constructor(
+    @inject('Logger') private logger: any,
+    @inject(AIService) private aiService: AIService
+  ) {
+    super();
+  }
+
+  async processDelta(payload: any): Promise<any> {
+    const query = payload.query || payload.message || "";
+      const result = console.log(`🚀 [${this.constructor.name}] Processing...`);
+    let fullOutput = "";
+    await this.aiService.askAIStream(query, (token) => {
+        
+        fullOutput += token;
+        if (payload && payload.onToken) payload.onToken(token);
+      }, this.name);
+    return {
+      success: true,
+      output: fullOutput,
+      agentName: this.name,
+      newTags: []
     };
   }
 }

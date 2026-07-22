@@ -6,11 +6,13 @@ export const useWebSocketStore = defineStore('websocket', {
     socket: null as Socket | null,
     isConnected: false,
     pendingGate: null as { gateType: string; runId?: string; data?: any } | null,
+    activeWorkflowId: null as string | null,
   }),
   actions: {
     connect(token: string) {
       if (this.socket) return;
-      this.socket = io('', { path: '/socket.io/', 
+      this.socket = io('', {
+        path: '/socket.io/',
         auth: { token },
         transports: ['websocket']
       });
@@ -26,6 +28,10 @@ export const useWebSocketStore = defineStore('websocket', {
         this.isConnected = false;
         console.log('⚠️ Nexus-Socket getrennt');
       });
+    },
+    setWorkflowId(id: string) {
+      this.activeWorkflowId = id;
+      console.log('📌 Kontext-ID gesetzt:', id);
     },
     sendMessage(event: string, data: any) {
       if (this.socket) {

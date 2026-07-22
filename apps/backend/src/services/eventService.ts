@@ -45,7 +45,7 @@ export async function getEventById(id: number) {
 }
 
 // NEU: Exportiere updateEvent
-export async function updateEvent(id: number, title: string, date: string) {
+export async function updateEvent(id: number, title: string, date: string): Promise<any> {
   try {
     const result = await dbUpdateEvent(id.toString(), title);
     return result;
@@ -56,7 +56,7 @@ export async function updateEvent(id: number, title: string, date: string) {
 }
 
 // NEU: Exportiere deleteEvent
-export async function deleteEvent(id: number) {
+export async function deleteEvent(id: number): Promise<any> {
   try {
     const result = await dbDeleteEvent(id.toString());
     return result;

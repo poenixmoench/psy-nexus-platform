@@ -3,7 +3,7 @@ rules:
   - id: phi-ratio-enforcement
     category: geometry
     priority: 1
-    enabled: true
+    enabled: false
     description: "Verwende immer den goldenen Schnitt (Phi = 1.618033988749895) für geometrische Berechnungen, wenn nicht anders spezifiziert."
     validator: "check_phi_ratio_usage"
     transformer: null
@@ -11,7 +11,7 @@ rules:
   - id: golden-angle-enforcement
     category: geometry
     priority: 1
-    enabled: true
+    enabled: false
     description: "Verwende immer den Goldenen Winkel (137.50776405026477°) für Rotationen/Anordnungen, wenn nicht anders spezifiziert."
     validator: "check_golden_angle_usage"
     transformer: null
@@ -35,7 +35,7 @@ rules:
   - id: sacred-geometry-patterns
     category: geometry
     priority: 4
-    enabled: true
+    enabled: false
     description: "Verfügbare Muster: Sri Yantra, Platonische Körper, Metatrons Würfel, Merkaba, Fraktale (z.B. Drachenkurve). Muss korrekt nach mathematischen Definitionen generiert werden."
     validator: "check_sacred_geometry_accuracy"
     transformer: null

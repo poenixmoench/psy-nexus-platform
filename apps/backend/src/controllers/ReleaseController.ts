@@ -1,0 +1,97 @@
+import { Controller, Post, Get, Patch, Param, Body, Inject } from '@nestjs/common';
+import { PrismaService } from '../db/PrismaService';
+
+@Controller('stigmergy/tags')
+export class ReleaseController {
+  constructor(
+    @Inject(PrismaService) private prisma: PrismaService
+  ) {}
+
+  @Get('pending')
+  async getPendingTags() {
+    try {
+      const result: any = await (this.prisma as any).$queryRaw`
+        SELECT COUNT(*) as count
+        FROM stigmergy_tags
+        WHERE payload->'data'->>'status' = 'WAITING_FOR_ALPHA'
+      `;
+      return { count: parseInt(result[0].count) };
+    } catch (error: any) {
+      console.error('Error fetching pending tags:', error);
+      return { count: 0, error: error.message };
+    }
+  }
+
+  @Get('pending/details')
+  async getPendingTagsDetails() {
+    try {
+      const result: any = await (this.prisma as any).$queryRaw`
+        SELECT id, source_agent, payload, timestamp
+        FROM stigmergy_tags
+        WHERE payload->'data'->>'status' = 'WAITING_FOR_ALPHA'
+        ORDER BY timestamp DESC
+        LIMIT 10
+      `;
+
+      // BigInt zu String konvertieren für JSON-Serialisierung
+      const tags = result.map((tag: any) => ({
+        ...tag,
+        timestamp: tag.timestamp ? tag.timestamp.toString() : null
+      }));
+
+      return { count: tags.length, tags };
+    } catch (error: any) {
+      console.error('Error fetching pending details:', error);
+      return { count: 0, error: error.message };
+    }
+  }
+
+  // === NEUER ALPHA-EDIT-ENDPOINT ===
+  @Patch(':id/edit')
+  async editTag(@Param('id') id: string, @Body() payloadUpdate: any) {
+    try {
+      // payloadUpdate muss ein gültiges JSON-Objekt sein.
+      // Wir überschreiben das gesamte JSONB-Feld 'payload' für die gegebene ID.
+      await (this.prisma as any).$executeRaw`
+        UPDATE stigmergy_tags
+        SET payload = ${payloadUpdate}::jsonb
+        WHERE id = ${id}::uuid
+      `;
+      console.log(`[ALPHA-LOCK] ✏️ Tag ${id} erfolgreich durch Alpha editiert.`);
+      return { success: true, message: 'Tag erfolgreich aktualisiert' };
+    } catch (error: any) {
+      console.error(`❌ [EDIT-ERROR] Fehler beim Bearbeiten von Tag ${id}:`, error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  @Post('release-all')
+  async releaseAllTags() {
+    try {
+      await (this.prisma as any).$executeRaw`
+        UPDATE stigmergy_tags
+        SET payload = jsonb_set(payload, '{data,status}', '"RELEASED"')
+        WHERE payload->'data'->>'status' = 'WAITING_FOR_ALPHA'
+      `;
+      return { success: true, message: 'Alle Locks freigegeben' };
+    } catch (error: any) {
+      console.error('Error releasing all tags:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  @Post(':id/release')
+  async releaseTag(@Param('id') id: string) {
+    try {
+      await (this.prisma as any).$executeRaw`
+        UPDATE stigmergy_tags
+        SET payload = jsonb_set(payload, '{data,status}', '"RELEASED"')
+        WHERE id = ${id}::uuid
+      `;
+      return { success: true, message: 'Tag freigegeben' };
+    } catch (error: any) {
+      console.error('Error releasing tag:', error);
+      return { success: false, error: error.message };
+    }
+  }
+}

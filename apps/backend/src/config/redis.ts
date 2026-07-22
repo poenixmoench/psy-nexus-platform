@@ -1,7 +1,7 @@
-import { createClient } from 'redis';
-import logger from '../services/logger'; // Korrekter Default-Import
+import { createClient, type RedisClientType } from 'redis';
+import logger from '../services/logger';
 
-const redisClient = createClient({
+const redisClient: RedisClientType = createClient({
     url: `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`,
     socket: {
         reconnectStrategy: (retries: number) => {
@@ -16,20 +16,7 @@ const redisClient = createClient({
     }
 });
 
-redisClient.on('error', (err) => logger.error(`❌ Redis-Fehler: ${err}`));
-redisClient.on('connect', () => logger.info('✅ Redis-Client verbindet sich...'));
-redisClient.on('ready', () => logger.info('🎉 Redis-Client bereit für Operationen'));
-
-const connectWithRetry = async () => {
-    try {
-        await redisClient.connect();
-        logger.info('🚀 Verbunden mit Redis-Server');
-    } catch (error) {
-        // Die ReconnectStrategy übernimmt das Management
-        logger.error(`⚠️ Initialer Redis-Fehler: ${error}`);
-    }
-};
-
-connectWithRetry();
+redisClient.on('error', (err) => logger.error('Redis Client Error', err));
+redisClient.on('connect', () => logger.info('Redis Client Connected'));
 
 export default redisClient;

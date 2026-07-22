@@ -1,6 +1,6 @@
 import { container } from "tsyringe";
 import { OrionOrchestrator } from "../orchestrator/OrionOrchestrator";
-import { AgentName } from "../types/AgentTypes";
+import { v4 as uuidv4 } from 'uuid';
 
 export class SocketService {
   private orchestrator: OrionOrchestrator;
@@ -10,12 +10,19 @@ export class SocketService {
   }
 
   async handleIncoming(socketId: string, payload: any) {
+    // Wir nehmen jetzt ALLES mit, was du schickst, Alpha Fabian
+    const workflowId = payload.workflowId || payload.sessionData?.workflowId || uuidv4();
+    const manualMode = payload.manualMode === true || payload.sessionData?.manualMode === true;
+
     const request = {
-      agent: payload.agent as AgentName,
+      agent: payload.agent,
       input: payload.message || payload.query,
-      userId: payload.userId
+      userId: payload.userId,
+      workflowId: workflowId,
+      manualMode: manualMode,
+      sessionData: payload.sessionData
     };
-    // Die Antwort wird hier direkt im Orchestrator auf Deutsch verarbeitet
+
     return await this.orchestrator.processRequestStreaming(request, () => {});
   }
 }

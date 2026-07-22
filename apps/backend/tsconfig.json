@@ -1,29 +1,22 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "commonjs",
-    "lib": ["ES2020"],
-    "outDir": "./dist",
-    "rootDir": "../../",
-    "strict": false,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "experimentalDecorators": true,
+    "module": "CommonJS",
+    "declaration": true,
+    "removeComments": true,
     "emitDecoratorMetadata": true,
-    "baseUrl": ".",
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2021",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
     "paths": {
-      "@shared/basis-agent": ["../../libs/shared/basis-agent/src/index.ts"],
-      "@shared/geometry": ["../../libs/shared/geometry/src/index.ts"],
-      "@shared/config/*": ["../../packages/shared/src/config/*"],
-      "@shared/*": ["../../packages/shared/src/*"],
-      "@shared/types/*": ["../../packages/shared/src/types/*"]
-    }
+      "@shared/*": ["../../packages/shared/src/*"]
+    },
+    "skipLibCheck": true,
+    "strictNullChecks": false,
+    "noImplicitAny": false
   },
-  "include": [
-    "src/**/*",
-    "../../packages/shared/src/**/*",
-    "../../libs/shared/basis-agent/src/**/*",
-    "../../libs/shared/geometry/src/**/*"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/docker-data/**", "../../packages/shared/node_modules"]
 }

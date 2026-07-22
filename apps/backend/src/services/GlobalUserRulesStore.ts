@@ -1,6 +1,6 @@
 // globalUserRules.ts
 
-import { AgentName } from '../types/AgentTypes'; // Importiere AgentName
+import { KnownAgentType as AgentName } from '@shared/types/AgentTypes'; // Importiere AgentName
 
 // Definition der Typen
 interface GlobalUserRuleContext {
@@ -83,7 +83,7 @@ globalUserRulesStore.addRule(exampleRule);
 // Dann lautet der Vergleich: ctx.agent === 'OrionAgent'
 const testOrionRule: GlobalUserRule = {
   id: 'test-orion-agent',
-  condition: async (ctx: GlobalUserRuleContext) => ctx.agent === 'OrionAgent' && ctx.input.trim().toUpperCase().startsWith('TEST'), // Korrigiert: 'ORION' -> 'OrionAgent'
+  condition: async (ctx: GlobalUserRuleContext) => ctx.agent === 'ORION_AGENT' && ctx.input.trim().toUpperCase().startsWith('TEST'), // Korrigiert: 'ORION' -> 'ORION_AGENT'
   action: async (ctx: GlobalUserRuleContext) => {
     console.log('Test command received for OrionAgent.');
   },

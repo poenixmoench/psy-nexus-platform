@@ -1,127 +1,79 @@
-import { KnownAgentType } from "@shared/types/AgentTypes";
 import { injectable, inject } from 'tsyringe';
-import { z } from 'zod';
-import { Logger } from "../types/Logger";
-import { AgentExecutor, AgentInput, AgentResult } from "../types/AgentExecutor";
+import { AgentExecutor } from '../agents/AgentExecutor';
+import { WorkflowStateService } from '../services/WorkflowStateService';
 import { GeometryTool } from '../tools/GeometryTool';
-import { AgentName } from "../types/AgentTypes";
-import * as fs from 'fs/promises';
-import * as path from 'path';
-
-const DOC_ANALYSIS_SCHEMA = z.object({
-  analysis: z.object({
-    primaryDomain: z.string(),
-    entities: z.array(z.string()),
-    seoElements: z.object({
-      headings: z.record(z.string(), z.array(z.string())),
-      missingCritical: z.array(z.string())
-    }),
-    potentialIntent: z.string(),
-    targetAudienceClues: z.array(z.string())
-  }),
-  recommendations: z.object({
-    jsonLdProposal: z.string(),
-    structuralSuggestions: z.array(z.string())
-  })
-});
-
-interface ProjectManifest {
-  projectName: string;
-  globalStyle: { theme: string; colors: string[]; fonts: string[] };
-  pages: Array<{ name: string; url: string; status: string }>;
-  lastMilestone: string;
-  updatedAt: string;
-}
+import { logShadowRouting } from '../services/ShadowRouter';
 
 @injectable()
 export class OrionOrchestrator {
-  private currentManifest: ProjectManifest | null = null;
-  private readonly VOLUME_BASE = '/mnt/HC_Volume_103847079/psy-nexus-library';
-  private readonly MANIFEST_PATH = path.join(this.VOLUME_BASE, 'manifests/psy-nexus-main.json');
-
   constructor(
-    @inject('Logger') private logger: Logger,
-    @inject('AgentExecutor') private agentExecutor: AgentExecutor,
-    private geometryTool: GeometryTool
+    @inject('AgentExecutor') private executor: AgentExecutor,
+    @inject(WorkflowStateService) private workflowState: WorkflowStateService,
+    @inject(GeometryTool) private geometryTool: GeometryTool
   ) {}
 
-  public async initialize(): Promise<void> {
-    await this.ensureVolumePaths();
-    try {
-      await this.loadManifestFromVolume();
-    } catch (err) {
-      this.currentManifest = this.getDefaultManifest();
-    }
-  }
+  async processRequestStreaming(request: any, onToken: (token: string) => void) {
+    const { workflowId, agent, input, sessionData } = request;
+    let targetAgent = agent || 'ORION_AGENT';
+    if (!targetAgent.toUpperCase().endsWith("_AGENT")) if (!targetAgent.endsWith("_AGENT")) targetAgent = `${targetAgent}_AGENT`;
+    const rawInput = input || "";
 
-  private async ensureVolumePaths() {
-    const dirs = [path.dirname(this.MANIFEST_PATH), path.join(this.VOLUME_BASE, 'code-snapshots')];
-    for (const d of dirs) await fs.mkdir(d, { recursive: true });
-  }
+    // Shadow-Router: nur Logging, kein Einfluss aufs Routing
+    logShadowRouting(rawInput, targetAgent);
 
-  private async loadManifestFromVolume() {
-    const data = await fs.readFile(this.MANIFEST_PATH, 'utf-8');
-    this.currentManifest = JSON.parse(data);
-  }
-
-  private getDefaultManifest(): ProjectManifest {
-    return {
-      projectName: "Psy-Nexus",
-      globalStyle: { theme: "Klarheit & Fokus", colors: [], fonts: [] },
-      pages: [],
-      lastMilestone: "Initialisierung",
-      updatedAt: new Date().toISOString()
-    };
-  }
-
-  public getCurrentManifest(): ProjectManifest {
-    return this.currentManifest || this.getDefaultManifest();
-  }
-
-  private validateAgentOutput<T>(output: string, schema: z.ZodSchema<T>): T {
-    let rawJson = output || "";
-    const markdownMatch = rawJson.match(/```json\s*\n([\s\S]*?)\n\s*```/);
-    if (markdownMatch) rawJson = markdownMatch[1].trim();
-    const parsed = JSON.parse(rawJson.match(/\{[\s\S]*\}/)?.[0] || rawJson);
-    return schema.parse(parsed);
-  }
-
-  public async processRequestStreaming(request: any, onChunk: (chunk: string) => void): Promise<AgentResult> {
-    const input = request.input.toLowerCase();
-
-    // 1. Dokumentation
-    if (request.agent === "DokumentationAgent" || request.agent === "DOKUMENTATION_AGENT") {
-      onChunk("\n[ORION]: Analyse läuft...\n");
-      const docResult = await this.agentExecutor.execute(request.agent, { query: request.input });
-      const extractedData = this.validateAgentOutput(docResult.output, DOC_ANALYSIS_SCHEMA);
-      return await this.agentExecutor.execute("ORION_AGENT", {
-        query: `SYNTHESE: ${JSON.stringify(extractedData)}`,
-        context: { ...request.sessionData, docAnalysis: extractedData }
-      });
-    }
-
-    // 2. Geometrie Hook - korrigiert
-    if (input.includes("tetraeder") || input.includes("geometrie")) {
-      onChunk("\n[ORION]: Geometrie-Kern aktiv...\n");
-      try {
-        // Korrekter Aufruf mit allen erforderlichen Parametern
-        const geoData = await this.geometryTool.calculate("PLATONIC_SOLIDS", "tetrahedron", { size: 5 });
-        const response = `\n[ERGEBNIS]: ${JSON.stringify(geoData)}\n`;
-        onChunk(response);
-        return { output: response, success: true, agentName: "ORION" as any };
-      } catch (err: any) {
-        onChunk(`\n[!] Geometrie-Fehler: ${err.message}\n`);
-        return { output: "", success: false, agentName: "ORION" as any };
+    // FIX 1: Zuerst erstellen
+    await this.workflowState.createWorkflow(workflowId, targetAgent, rawInput);
+    
+    // FIX 2: Dann laden (jetzt existiert er!)
+    const currentWorkflow = await this.workflowState.getWorkflow(workflowId);
+    
+    // FIX 3: Jetzt funktioniert die Prüfung
+    if (currentWorkflow && !(currentWorkflow.metadata as any)?.nicheLocked) {
+      const detectedNiche = this.extractNiche(rawInput);
+      if (detectedNiche) {
+        await this.workflowState.lockNiche(workflowId, detectedNiche);
+        console.log(`🔒 [ORCHESTRATOR] Niche locked: ${detectedNiche}`);
       }
     }
 
-    // 3. Standard Flow & PlanAgent
-    const context = request.agent === "PlanAgent" 
-      ? { ...request.sessionData, manifest: this.getCurrentManifest() }
-      : request.sessionData;
+    const niche = await this.workflowState.getNiche(workflowId);
+    const nicheContext = niche 
+      ? `\n\n### 🏷️ AKTIVE NISCHE: ${niche.toUpperCase()}\nDIREKTIVE: Alle Ausgaben MÜSSEN zu dieser Nische passen!` 
+      : "";
 
-    const result = await this.agentExecutor.execute(request.agent, { query: request.input, context });
-    if (result && result.output) onChunk(result.output);
-    return result;
+    let previousOutput = (currentWorkflow?.metadata as any)?.last_result || null;
+
+    try {
+      let enrichedInput = rawInput + nicheContext;
+
+      if (targetAgent !== 'DOKUMENTATION_AGENT' &&
+          ['FRONTEND_MEISTER_AGENT', 'DESIGN_ALCHEMIST_AGENT'].includes(targetAgent)) {
+        const manifest = this.geometryTool.getManifest();
+        const allForms = manifest.flatMap(m => m.forms || []);
+        const detectedForm = allForms.find(f => rawInput.toLowerCase().includes(f.toLowerCase()));
+        if (detectedForm) {
+          const data = this.geometryTool.calculate(detectedForm as any, 'RODIN' as any, { size: 100 });
+          if (data) {
+            enrichedInput = `${rawInput}\n\n### 📐 GEOMETRIE_DATA\nDATA: ${JSON.stringify(data)}${nicheContext}`;
+          }
+        }
+      }
+
+      console.log(`⏳ [EXECUTOR] Starte Berechnung für ${targetAgent}...`);
+      const fullOutput = await this.executor.executeStream(targetAgent, enrichedInput, (token) => onToken(token), previousOutput);
+      const result = { output: fullOutput };
+      console.log(`✅ [EXECUTOR] Berechnung abgeschlossen.`);
+      
+      await this.workflowState.updateStatus(workflowId, 'completed', result);
+    } catch (err: any) {
+      onToken(`SYSTEM-ERROR: ${err.message}`);
+      await this.workflowState.updateStatus(workflowId, 'failed', { error: err.message });
+    }
+  }
+
+  private extractNiche(input: string): string | null {
+    const regex = /(?:für|in der|im Bereich|Thema|Nische|zum Thema)\s+([a-zA-ZäöüÄÖÜ0-9\s\-]{3,40})/i;
+    const match = input.match(regex);
+    return match && match[1] ? match[1].trim() : null;
   }
 }

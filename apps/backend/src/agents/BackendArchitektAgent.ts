@@ -1,12 +1,32 @@
-import { injectable } from 'tsyringe';
-import { BaseAgent } from '@shared/basis-agent';
-import { ContextDelta, StigmergyTag, KnownAgentType } from '@shared/types/AgentTypes';
+import { injectable, inject } from 'tsyringe';
+import { BaseAgent } from '@shared/basis-agent/BaseAgent';
+import { AIService } from '../services/AIService';
 
 @injectable()
 export class BackendArchitektAgent extends BaseAgent {
-  public readonly name: KnownAgentType = 'BACKEND_ARCHITEKT_AGENT';
-  public async processDelta(delta: ContextDelta) {
-    const hashSnippet = delta?.currentHash ? delta.currentHash.substring(0, 8) : 'N/A';
-    return { text: `[${this.name}] Architektur-Audit für ${hashSnippet} abgeschlossen.`, newTags: [] };
+  public readonly name = 'BACKEND_ARCHITEKT_AGENT';
+  
+  constructor(
+    @inject('Logger') private logger: any,
+    @inject(AIService) private aiService: AIService
+  ) {
+    super();
+  }
+
+  async processDelta(payload: any): Promise<any> {
+    const query = payload.query || payload.message || "";
+      const result = console.log(`🚀 [${this.constructor.name}] Processing...`);
+    let fullOutput = "";
+    await this.aiService.askAIStream(query, (token) => {
+        
+        fullOutput += token;
+        if (payload && payload.onToken) payload.onToken(token);
+      }, this.name);
+    return {
+      success: true,
+      output: fullOutput,
+      agentName: this.name,
+      newTags: []
+    };
   }
 }
