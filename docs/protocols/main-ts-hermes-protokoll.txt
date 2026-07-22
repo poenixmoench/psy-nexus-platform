@@ -1,0 +1,3 @@
+main.ts:
+[missing] target=api-prefix-context | file=/root/psy-nexus-platform/apps/backend/src/main.ts | checked_primary=setGlobalPrefix,app.setGlobalPrefix | checked_secondary='api',"api",'/api',"/api" | scan=full-file
+[found] target=listen-port-context | anchor=primary:app.listen | value=await app.listen(PORT, () => { | file=/root/psy-nexus-platform/apps/backend/src/main.ts | context=line 42
